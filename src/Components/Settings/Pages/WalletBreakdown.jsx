@@ -1,9 +1,11 @@
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight,Settings } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const WalletBreakdown = () => {
   const [activeTab, setActiveTab] = useState("utility"); // "utility" or "earning"
   const [currentPage, setCurrentPage] = useState(1);
+const navigate = useNavigate();
 
   const transactionsPerPage = 4; // You can change this
 
@@ -76,23 +78,22 @@ const WalletBreakdown = () => {
   };
 
   return (
-    <div className="min-h-screen pb-16 text-white font-poppins">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen pb-16 text-white font-poppins ">
+      <div className="max-w-md mx-auto ">
 
         {/* Header */}
-        <div className="flex items-center gap-4 mb-3 pl-3 pt-2">
-          <button
-            className="p-2 rounded-md bg-white/5 hover:bg-white/10 active:bg-white/15 
-                     backdrop-blur-xl border border-white/10 transition-all duration-300 
-                     hover:scale-110 active:scale-95"
-          >
-            <ArrowLeft size={20} className="transition-transform duration-300" />
-          </button>
-
-          <div>
-            <h1 className="text-md font-semibold tracking-tight">Wallet BreakDown</h1>
-          </div>
-        </div>
+        <div className="flex bg-[#282936] items-center justify-between mb-5 px-3 py-2">
+                    <div className="flex items-center gap-3">
+                        <button 
+  onClick={() => navigate(-1)} 
+  className="p-1.5 rounded-md text-[#FFFFFF]"
+>
+  <ArrowLeft size={20} />
+</button>
+                        <h1 className="text-lg font-[Manrope] font-bold">Wallet BreakDown</h1>
+                    </div>
+                    <Settings size={20} className="text-white" />
+                </div>
 
         {/* Tabs */}
         <div className="px-4 pt-2 flex gap-2">
@@ -294,7 +295,7 @@ const WalletBreakdown = () => {
         <p className="text-xs uppercase  text-gray-400">TOTAL PORTFOLIO VALUE</p>
         <div className="flex items-baseline gap-2 mt-1">
           <span 
-            className="text-2xl font-semibold"
+            className="text-xl font-semibold"
            
           >
             0.0000
@@ -304,7 +305,7 @@ const WalletBreakdown = () => {
       </div>
 
       <div className="text-right">
-        <p className="text-lg font-semibold">$0.00 USD</p>
+        <p className="text-md font-semibold">$0.00 USD</p>
         <p className="text-xs text-emerald-400">+0.00% (24H)</p>
       </div>
     </div>
