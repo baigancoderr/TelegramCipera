@@ -105,7 +105,7 @@ const WithdrawUSDT = () => {
               {/* Button */}
               <button
                 onClick={handleWithdraw}
-                className="w-full mt-2 py-2 rounded-md bg-gradient-to-r from-blue-500 to-purple-500 font-semibold flex items-center justify-center gap-2 hover:opacity-90"
+                className="w-full mt-2 py-2 rounded-md bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))] font-semibold flex items-center justify-center gap-2 hover:opacity-90"
               >
                 <Send size={16} />
                 Withdraw Now
