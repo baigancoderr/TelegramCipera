@@ -29,7 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/wallet" element={<Wallet />} />
-          <Route path="/upgrade" element={<Upgrade />} />
+          <Route path="/invest" element={<Upgrade />} />
           <Route path="/addfund" element={<AddFund />} />
 
           {/* 🔥 SETTINGS ROUTES */}

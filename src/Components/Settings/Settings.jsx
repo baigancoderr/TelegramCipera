@@ -2,83 +2,142 @@
 
 import {
   User, Users, TrendingUp, Wallet,
-  Plus, Clock, Download
+  Plus, Clock, Download, ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import settingImg from "../../assets/setting/user-img.jpeg";
 
 const SettingsComponent = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: <User size={20} />, label: "Profile" , action: () => navigate("/settings/profile"),},
-    { icon: <Users size={20} />, label: "My Referrals" , action: () => navigate("/settings/referral"),},
-    { icon: <TrendingUp size={20} />, label: "Referral Earnings History", action: () => navigate("/settings/referral-earning-history"), },
-    { icon: <Wallet size={20} />, label: "Wallet Breakdown" , action: () => navigate("/settings/wallet-breakdown"),},
-    { icon: <Plus size={20} />, label: "Add Funds", action: () => navigate("/addfund"), },
-    { icon: <Clock size={20} />, label: "Deposit History", action: () => navigate("/settings/deposit-history"), },
-    { icon: <Download size={20} />, label: "Withdraw USDT", action: () => navigate("/settings/withdraw-usdt"), },
-    { icon: <Download size={20} />, label: "FAQs" ,action: () => navigate("/settings/faqs"),},
-
-    // 🔥 ROUTES
     {
-      icon: <Download size={20} />,
-      label: "Term Condition",
+      icon: <User size={18} />,
+      title: "Account",
+      subtitle: "Security, change number",
+      action: () => navigate("/settings/profile"),
+    },
+    {
+      icon: <Users size={18} />,
+      title: "My Referrals",
+      subtitle: "Invite & manage referrals",
+      action: () => navigate("/settings/referral"),
+    },
+    {
+      icon: <TrendingUp size={18} />,
+      title: "Referral Earnings",
+      subtitle: "Track your earnings",
+      action: () => navigate("/settings/referral-earning-history"),
+    },
+    {
+      icon: <Wallet size={18} />,
+      title: "Wallet Breakdown",
+      subtitle: "Balance & details",
+      action: () => navigate("/settings/wallet-breakdown"),
+    },
+    {
+      icon: <Plus size={18} />,
+      title: "Add Funds",
+      subtitle: "Deposit crypto",
+      action: () => navigate("/addfund"),
+    },
+    {
+      icon: <Clock size={18} />,
+      title: "Deposit History",
+      subtitle: "All transactions",
+      action: () => navigate("/settings/deposit-history"),
+    },
+    {
+      icon: <Download size={18} />,
+      title: "Withdraw USDT",
+      subtitle: "Transfer funds",
+      action: () => navigate("/settings/withdraw-usdt"),
+    },
+    {
+      icon: <Download size={18} />,
+      title: "FAQs",
+      subtitle: "Common questions",
+      action: () => navigate("/settings/faqs"),
+    },
+    {
+      icon: <Download size={18} />,
+      title: "Terms & Conditions",
+      subtitle: "Legal info",
       action: () => navigate("/settings/term-condition"),
     },
     {
-      icon: <Download size={20} />,
-      label: "Privacy Policy",
+      icon: <Download size={18} />,
+      title: "Privacy Policy",
+      subtitle: "Your data safety",
       action: () => navigate("/settings/privacy"),
     },
   ];
 
   return (
-    <div className="pb-24  min-h-screen">
-      <div className="w-full max-w-md mx-auto px-2 pt-5">
+    <div className="min-h-screen  text-white pb-24">
+  <div className="max-w-md mx-auto w-full">
 
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-4 px-2"
+      {/* 🔥 HEADER */}
+      <div className="relative h-48 bg-gradient-to-b from-[#587FFF] to-black rounded-b-[50px] flex flex-col items-center justify-end pb-6">
+
+        {/* <button
+          onClick={() => navigate(-1)}
+          className="absolute top-4 left-4 text-white text-lg"
         >
-          <div className="w-8 h-8 rounded-2xl flex items-center justify-center text-lg shadow-lg shadow-blue-500/30">
-            ⚙️
-          </div>
-          <h1 className="text-xl font-semibold text-white">
-            Settings
-          </h1>
-        </motion.div>
+          ←
+        </button>
 
-        <div className="space-y-2 px-1">
-          {menuItems.map((item, index) => (
-            <motion.div
-              key={index}
-             onClick={() => item.action && item.action()}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center justify-between px-3 py-2 rounded-md
-                bg-white/5 backdrop-blur-xl border border-white/10">
+        <p className="absolute top-4 text-sm text-gray-200">
+          Settings
+        </p> */}
 
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl text-blue-400">
-                    {item.icon}
-                  </div>
-
-                  <span className="text-[14px] text-gray-200">
-                    {item.label}
-                  </span>
-                </div>
-
-                <div className="text-gray-500 text-xl">→</div>
-              </div>
-            </motion.div>
-          ))}
+        {/* Profile */}
+        <div className="flex flex-col items-center">
+          <img
+            src={settingImg}
+            alt="profile"
+            className="w-20 h-20 rounded-full border-2 border-white shadow-lg"
+          />
+          <h2 className="mt-2 font-semibold text-lg">
+            Mark Steven
+          </h2>
+          <p className="text-xs text-gray-300">
+            markst@co.in
+          </p>
         </div>
+      </div>
+
+      {/* 🔥 MENU LIST */}
+      <div className="mt-4 space-y-1 px-3">
+
+        {menuItems.map((item, index) => (
+          <motion.div
+            key={index}
+            whileTap={{ scale: 0.97 }}
+            onClick={item.action}
+            className="flex items-center justify-between py-3 border-b border-white/10 cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+
+              <div className="p-2 bg-white/5 rounded-lg">
+                {item.icon}
+              </div>
+
+              <div>
+                <p className="text-sm">{item.title}</p>
+                <p className="text-xs text-gray-400">
+                  {item.subtitle}
+                </p>
+              </div>
+            </div>
+
+            <ChevronRight size={18} className="text-gray-500" />
+          </motion.div>
+        ))}
 
       </div>
+    </div>
     </div>
   );
 };

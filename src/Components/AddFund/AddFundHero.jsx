@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Settings, Copy, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Clock, Package, ShieldCheck } from "lucide-react";
 const AddFundHero = () => {
   const navigate = useNavigate();
   const coins = [
@@ -66,66 +67,65 @@ const AddFundHero = () => {
                 </div>
 
         {/* Amount Input */}
-        <div className="mb-5">
-          <p className="text-sm text-gray-400 mb-2">Enter Amount</p>
+       <div className="mb-5">
+  <p className="text-sm text-gray-400 mb-2">Enter Amount</p>
 
-          <div className="flex items-center justify-between bg-[linear-gradient(217.49deg,_rgba(88,127,255,0.5)_1.24%,_rgba(0,7,64,0.245)_20.92%)] border border-cyan-400/30 rounded-xl px-4 py-2 relative">
-            <input
-              type="number"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="bg-transparent outline-none text-md font-medium w-full text-gray-200 placeholder-gray-500"
-            />
+  <div className="flex items-center justify-between bg-[#20262F] border border-[#81ECFF] rounded-md px-4 py-2 relative">
+    
+    <input
+      type="number"
+      placeholder="0.00"
+      value={amount}
+      onChange={(e) => setAmount(e.target.value)}
+      className="bg-transparent outline-none text-md font-medium w-full text-gray-200 placeholder-gray-500"
+    />
 
-            {/* Currency Selector */}
-            <div
-              ref={buttonRef}
-              onClick={() => setOpen(!open)}
-              className="bg-black px-4 py-1 rounded-md flex items-center gap-2 cursor-pointer hover:bg-zinc-900 transition border border-white/10"
-            >
-              <img
-                src={selected.icon}
-                alt={selected.name}
-                className="w-6 h-6 rounded-full"
-                onError={(e) => (e.target.src = "https://via.placeholder.com/24?text=?")}
-              />
-              <span className="text-sm font-semibold text-white">{selected.name}</span>
-              <span className="text-xs text-gray-400">▼</span>
-            </div>
+    {/* Currency Selector */}
+    <div
+      ref={buttonRef}
+      onClick={() => setOpen(!open)}
+      className="bg-black px-3 py-1 rounded-md flex items-center gap-2 cursor-pointer hover:bg-zinc-900 transition border border-white/10"
+    >
+      <img
+        src={selected.icon}
+        alt={selected.name}
+        className="w-5 h-5 rounded-full"
+        onError={(e) => (e.target.src = "https://via.placeholder.com/24?text=?")}
+      />
+      <span className="text-sm font-semibold text-white">{selected.name}</span>
+      <span className="text-xs text-gray-400">▼</span>
+    </div>
 
-            {/* Dropdown */}
-            {open && (
-              <div
-                ref={dropdownRef}
-                className="absolute top-full right-3 mt-2 w-28 bg-[#000] border border-white rounded-md shadow-2xl z-50 overflow-hidden py-1"
-              >
-                {coins.map((coin) => (
-                  <div
-                    key={coin.name}
-                    onClick={() => {
-                      setSelected(coin);
-                      setOpen(false);
-                    }}
-                    className={`px-3 py-1 flex items-center gap-1 hover:bg-white/10 cursor-pointer transition ${
-                      selected.name === coin.name ? "bg-white/10" : ""
-                    }`}
-                  >
-                    {/* <img
-                      src={coin.icon}
-                      alt={coin.name}
-                      className="w-6 h-6 rounded-full"
-                      onError={(e) => (e.target.src = "https://via.placeholder.com/24?text=?")}
-                    /> */}
-                    <span className="text-white font-medium">{coin.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+    {/* Dropdown */}
+    {open && (
+      <div
+        ref={dropdownRef}
+        className="absolute top-full right-3 mt-2 w-28 bg-[#000]  border border-[#81ECFF] rounded-md shadow-2xl z-50 overflow-hidden py-1"
+      >
+        {coins.map((coin) => (
+          <div
+            key={coin.name}
+            onClick={() => {
+              setSelected(coin);
+              setOpen(false);
+            }}
+            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition ${
+              selected.name === coin.name
+                ? " text-[#FFA20D]"
+                : "hover:bg-black/10"
+            }`}
+          >
+            <span className="text-[#FFA20D] items-center font-semibold">{coin.name}</span>
           </div>
+        ))}
+      </div>
+    )}
+  </div>
 
-          <p className="text-xs text-cyan-400 mt-2 pl-1">Minimum: $2 USDT</p>
-        </div>
+  <p className="text-xs text-cyan-400 mt-2 pl-1">
+    Minimum: $2 USDT
+  </p>
+</div>
 
         {/* Quick Amount Buttons - Now functional */}
         <div className="grid grid-cols-4 gap-3 mb-6">
@@ -133,7 +133,7 @@ const AddFundHero = () => {
             <button
               key={amt}
               onClick={() => handleQuickAmount(amt)}
-              className="py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition active:scale-95"
+              className="py-3 rounded-xl bg-[#1B2028] hover:bg-[#31458C] border border-white/10 text-sm font-medium transition active:scale-95"
             >
               {amt}
             </button>
@@ -141,44 +141,60 @@ const AddFundHero = () => {
         </div>
 
         {/* Payment Instructions - Icons on first line */}
-        <div className="mb-6">
-          <p className="text-xs tracking-widest text-gray-400 mb-4">
-            PAYMENT INSTRUCTIONS
-          </p>
+    
+<div className="mb-6">
+  <p className="text-xs tracking-widest text-[#FFFFFF] mb-4">
+    PAYMENT INSTRUCTIONS
+  </p>
 
-          <div className="rounded-xl p-[0.7px] bg-[linear-gradient(217.49deg,_rgba(88,127,255,0.5)_1.24%,_rgba(0,7,64,0.245)_20.92%)] border border-white shadow-xl overflow-hidden">
-            <div className="rounded-2xl p-5 bg-white/5 backdrop-blur-xl border border-white/10 space-y-5">
-              
-              {/* First Item - Icon + Text in same row */}
-              <div className="flex gap-3">
-                <div className="p-2 rounded-xl bg-purple-500/20 text-xl flex-shrink-0">⏱️</div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">20 Minute Timeout</p>
-                  <p className="text-xs text-gray-400">Address valid only for 20 minutes.</p>
-                </div>
-              </div>
-
-              {/* Second Item */}
-              <div className="flex gap-3">
-                <div className="p-2 rounded-xl bg-blue-500/20 text-xl flex-shrink-0">📦</div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Single Transaction</p>
-                  <p className="text-xs text-gray-400">Send exact amount in one transaction.</p>
-                </div>
-              </div>
-
-              {/* Third Item */}
-              <div className="flex gap-3">
-                <div className="p-2 rounded-xl bg-green-500/20 text-xl flex-shrink-0">🛡️</div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Network Verification</p>
-                  <p className="text-xs text-gray-400">Funds appear after confirmations.</p>
-                </div>
-              </div>
-
-            </div>
-          </div>
+  <div className="rounded-xl p-[0.7px] bg-[linear-gradient(217.49deg,_rgba(88,127,255,0.5)_1.24%,_rgba(0,7,64,0.245)_20.92%)] border border-white shadow-xl overflow-hidden">
+    
+    <div className="rounded-2xl p-5 bg-white/5 backdrop-blur-xl border border-white/10 space-y-5">
+      
+      {/* Timeout */}
+      <div className="flex gap-3 items-start">
+        <div className="p-2 rounded-xl bg-purple-500/20 flex items-center justify-center">
+          <Clock size={18} className="text-purple-400" />
         </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-white">20 Minute Timeout</p>
+          <p className="text-xs text-[#A8ABB3] font-[300] leading-relaxed">
+            The payment address is only valid for 20 minutes. Please ensure you complete the transfer within this window.
+          </p>
+        </div>
+      </div>
+
+      {/* Single Transaction */}
+      <div className="flex gap-3 items-start">
+        <div className="p-2 rounded-xl bg-blue-500/20 flex items-center justify-center">
+          <Package size={18} className="text-blue-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-white">Single Transaction</p>
+          <p className="text-xs text-[#A8ABB3] font-[300] leading-relaxed">
+            Send the exact amount in one single
+transaction. Multiple partial payments may result in fund loss.
+          </p>
+        </div>
+      </div>
+
+      {/* Network Verification */}
+      <div className="flex gap-3 items-start">
+        <div className="p-2 rounded-xl bg-green-500/20 flex items-center justify-center">
+          <ShieldCheck size={18} className="text-green-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-white">Network Verification</p>
+          <p className="text-xs text-[#A8ABB3] font-[300] leading-relaxed">
+            Verification takes approximately 1-5
+minutes depending on network congestion. Funds will appear after 3 confirmations.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
         {/* Terms */}
         <div className="flex items-start gap-2 mb-6">
@@ -196,8 +212,8 @@ const AddFundHero = () => {
 
         {/* Button */}
         <button className="w-full py-3  rounded-xl font-semibold text-md tracking-wide
-        bg-[linear-gradient(0deg,_#587FFF_0%,_#09239F_70%)] 
-          shadow-xl shadow-blue-500/40 hover:brightness-110 transition active:scale-[0.98]">
+      bg-[linear-gradient(45deg,_#587FFF_0%,_#09239F_100%)]
+          shadow-md shadow-blue-500/40 hover:brightness-110 transition active:scale-[0.98]">
          Submit
         </button>
       </div>

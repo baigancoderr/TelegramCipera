@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const WalletBreakdown = () => {
-  const [activeTab, setActiveTab] = useState("utility"); // "utility" or "earning"
+   // "utility" or "earning"
+   const [activeTab, setActiveTab] = useState("Utility");
   const [currentPage, setCurrentPage] = useState(1);
 const navigate = useNavigate();
 
@@ -96,29 +97,29 @@ const navigate = useNavigate();
                 </div>
 
         {/* Tabs */}
-        <div className="px-4 pt-2 flex gap-2">
-          <button
-            onClick={() => setActiveTab("utility")}
-            className={`flex-1 py-2 rounded-xl font-medium transition-all text-sm ${
-              activeTab === "utility"
-                ? "bg-blue-500 text-white"
-                : "bg-white/10 text-gray-400 hover:bg-white/15"
-            }`}
-          >
-            Utility Wallet
-          </button>
+       <div className="flex bg-[#000] border border-[#444B55] rounded-full p-1 mb-2">
+                    <button
+                        onClick={() => setActiveTab("Utility")}
+                        className={`flex-1 py-2 text-sm rounded-full font-[Poppins] transition ${
+                            activeTab === "Utility"
+                                ? "bg-[linear-gradient(45deg,_#587FFF_0%,_#09239F_100%)]"
+                                : "text-gray-400"
+                        }`}
+                    >
+                        Utility
+                    </button>
 
-          <button
-            onClick={() => setActiveTab("earning")}
-            className={`flex-1 py-2 rounded-xl font-medium transition-all text-sm ${
-              activeTab === "earning"
-                ? "bg-blue-500 text-white"
-                : "bg-white/10 text-gray-400 hover:bg-white/15"
-            }`}
-          >
-            Earning Wallet
-          </button>
-        </div>
+                    <button
+                        onClick={() => setActiveTab("Earning")}
+                        className={`flex-1 py-2 text-sm rounded-full font-[Poppins] transition ${
+                            activeTab === "Earning"
+                                ? "bg-[linear-gradient(45deg,_#587FFF_0%,_#09239F_100%)]"
+                                : "text-gray-400"
+                        }`}
+                    >
+                        Earning
+                    </button>
+                </div>
 
         {/* Available Balance */}
         <div className="px-4 pt-6 pb-4">
@@ -157,7 +158,7 @@ const navigate = useNavigate();
             </span>
           </div>
 
-          <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="rounded-xl border border-white/5 overflow-hidden shadow-lg bg-linear-gradient(217.49deg, rgba(88, 127, 255, 0.5) 1.24%, rgba(0, 7, 64, 0.245) 20.92%) backdrop-blur-2xl">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
