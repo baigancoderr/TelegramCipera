@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 const Referral = () => {
   const navigate = useNavigate();
   return (
-    <div className="  pb-20 py-3 px-3  text-white font-sans flex justify-center">
+    <div className="  pb-20 py-3 px-3 pb-24   text-white font-sans flex justify-center">
       <div className="w-full max-w-md mx-auto   relative">
 
         {/* Header */}
