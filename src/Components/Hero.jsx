@@ -39,20 +39,31 @@ const HomeDashboard = () => {
   const userId = "CIP579317981";
 
   const navigate = useNavigate();
-  const handleShare = () => {
-    if (navigator.share) {
-      // Mobile native share (Telegram, WhatsApp etc.)
-      navigator.share({
-        title: "Join Now 🚀",
-        text: "Join using my referral link and earn rewards!",
-        url: referralLink,
-      });
-    } else {
-      // Fallback: direct Telegram share link
-      const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Join and earn 🚀")}`;
-      window.open(telegramUrl, "_blank");
-    }
-  };
+ const handleShare = () => {
+  const text = "Join and earn 🚀";
+  const url = referralLink;
+
+  if (window.Telegram?.WebApp) {
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+      url
+    )}&text=${encodeURIComponent(text)}`;
+
+    window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
+  } else if (navigator.share) {
+    navigator.share({
+      title: "Join Now 🚀",
+      text,
+      url,
+    });
+  } else {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(
+        url
+      )}&text=${encodeURIComponent(text)}`,
+      "_blank"
+    );
+  }
+};
 
   const handleCopy = async () => {
     try {

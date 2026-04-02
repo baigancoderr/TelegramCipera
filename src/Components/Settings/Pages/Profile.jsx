@@ -30,20 +30,31 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // ✅ Share
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: "Join Now 🚀",
-        text: "Join using my referral link and earn rewards!",
-        url: referralLink,
-      });
-    } else {
-      const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(
-        referralLink
-      )}&text=${encodeURIComponent("Join and earn 🚀")}`;
-      window.open(telegramUrl, "_blank");
-    }
-  };
+ const handleShare = () => {
+  const text = "Join and earn 🚀";
+  const url = referralLink;
+
+  if (window.Telegram?.WebApp) {
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+      url
+    )}&text=${encodeURIComponent(text)}`;
+
+    window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
+  } else if (navigator.share) {
+    navigator.share({
+      title: "Join Now 🚀",
+      text,
+      url,
+    });
+  } else {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(
+        url
+      )}&text=${encodeURIComponent(text)}`,
+      "_blank"
+    );
+  }
+};
 
   // ✅ Copy
   const handleCopy = async () => {
