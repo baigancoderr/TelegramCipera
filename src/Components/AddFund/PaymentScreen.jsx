@@ -3,117 +3,122 @@ import { ArrowLeft, Copy, Share2, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import Footer from "../Footer";
 import bgImg from "../../assets/bgImg.png";
-
-/* ================= TOAST HOOK ================= */
-const useToast = () => {
-  const [toast, setToast] = useState(null);
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-
-    setTimeout(() => {
-      setToast(null);
-    }, 2500);
-  };
-
-  const Toast = () =>
-    toast && (
-      <div
-        className={`fixed top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm z-50 backdrop-blur-md
-        ${
-          toast.type === "success"
-            ? "bg-green-500/20 text-green-400 border border-green-500/40"
-            : "bg-red-500/20 text-red-400 border border-red-500/40"
-        }`}
-      >
-        {toast.msg}
-      </div>
-    );
-
-  return { showToast, Toast };
-};
+import toast from "react-hot-toast";   // Using same toast as Profile
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { amount, coin } = location.state || {};
+  
+  // Get data passed from AddFundPage
+  const { 
+    amount, 
+    coin, 
+    walletAddress, 
+    qrData 
+  } = location.state || {};
 
-  const { showToast, Toast } = useToast();
+  const [time, setTime] = useState(1200); // 20 minutes in seconds
+  const [isExpired, setIsExpired] = useState(false);
 
-  const [time, setTime] = useState(1200);
-
-  /* ================= TIMER ================= */
+  // Timer
   useEffect(() => {
+    if (time <= 0) return;
+
     const timer = setInterval(() => {
-      setTime((prev) => (prev > 0 ? prev - 1 : 0));
+      setTime((prev) => {
+        if (prev <= 1) {
+          setIsExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
-
-  /* ================= AUTO REDIRECT ================= */
-  useEffect(() => {
-    if (time === 0) {
-      showToast("Payment Time Expired ⏳", "error");
-      setTimeout(() => {
-        navigate("/addfund", { replace: true });
-      }, 1200);
-    }
   }, [time]);
 
-  /* ================= FORMAT ================= */
+  // Auto redirect when time expires
+  useEffect(() => {
+    if (isExpired) {
+      toast.error("Payment Time Expired ⏳", { duration: 2000 });
+      
+      setTimeout(() => {
+        navigate("/addfund", { replace: true });
+      }, 1500);
+    }
+  }, [isExpired, navigate]);
+
+  // Format Time (MM:SS)
   const formatTime = () => {
     const min = Math.floor(time / 60);
     const sec = time % 60;
     return `${min}:${sec < 10 ? "0" : ""}${sec}`;
   };
 
-  /* ================= DATA ================= */
-  const wallet = "0x30Ed3289aFB346B14718f444355Ab59D43688c3b";
-
-  /* ================= COPY ================= */
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-    showToast("Copied Successfully ✅");
-  };
-
-  /* ================= SHARE ================= */
-  const handleShare = async (text) => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Payment Details",
-          text: text,
-        });
-        showToast("Shared Successfully 🚀");
-      } catch {
-        showToast("Share Cancelled ❌", "error");
-      }
-    } else {
-      showToast("Sharing not supported ❌", "error");
+  // Copy to clipboard
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied Successfully ✅");
+    } catch {
+      toast.error("Failed to copy ❌");
     }
   };
 
-  /* ================= ACTIONS ================= */
-  const handleCancel = () => {
-    showToast("Payment Cancelled ❌", "error");
+  // Share (Telegram + Web Share)
+  const handleShare = async (text) => {
+    const shareText = `Pay ${amount} ${coin?.name || "USDT"} to this address:\n${text}`;
 
+    if (window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.openTelegramLink(
+          `https://t.me/share/url?url=${encodeURIComponent(text)}&text=${encodeURIComponent(shareText)}`
+        );
+        toast.success("Shared Successfully 🚀");
+      } catch {
+        toast.error("Share failed");
+      }
+    } else if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Payment Details",
+          text: shareText,
+        });
+        toast.success("Shared Successfully 🚀");
+      } catch {
+        toast.error("Share cancelled");
+      }
+    } else {
+      toast.error("Sharing not supported on this device");
+    }
+  };
+
+  const handleCancel = () => {
+    toast.error("Payment Cancelled ❌");
     setTimeout(() => {
       navigate("/addfund", { replace: true });
-    }, 1000);
+    }, 800);
   };
 
   const handleComplete = () => {
-    showToast("Payment Submitted ✅");
-
+    toast.success("Payment Submitted ✅\nWaiting for confirmation...");
     setTimeout(() => {
       navigate("/addfund", { replace: true });
-    }, 1000);
+    }, 1200);
   };
+
+  // Safety check
+  if (!amount || !walletAddress) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        <p className="text-red-400">Invalid payment data. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div
-      className="pb-20"
+      className="pb-20 min-h-screen"
       style={{
         backgroundImage: `url(${bgImg})`,
         backgroundSize: "cover",
@@ -124,8 +129,6 @@ const PaymentScreen = () => {
       <div className="min-h-screen text-white px-3 py-4">
         <div className="max-w-md mx-auto space-y-5">
 
-          
-
           {/* TIMER */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
             <div className="bg-[#00000033] p-4 backdrop-blur-[20px] flex justify-between items-center">
@@ -133,60 +136,47 @@ const PaymentScreen = () => {
                 <Clock size={16} />
                 Expires in {formatTime()}
               </div>
-
-              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs">
+              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
                 Waiting
               </span>
             </div>
           </div>
 
-          {/* QR */}
+          {/* QR CODE */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden text-center">
             <div className="bg-[#00000033] p-5 backdrop-blur-[20px]">
               <div className="bg-white p-3 rounded-xl inline-block">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${wallet}`}
-                  alt="qr"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData || walletAddress)}`}
+                  alt="QR Code"
                   className="w-44 h-44"
                 />
               </div>
-
-              <p className="text-sm text-gray-400 mt-3">
-                Scan QR Code to Pay
-              </p>
+              <p className="text-sm text-gray-400 mt-3">Scan QR Code to Pay</p>
             </div>
           </div>
 
-          {/* WALLET UI (UPDATED SAME AS REFERRAL) */}
+          {/* WALLET ADDRESS */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
             <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
-
               <p className="text-sm text-gray-300 mb-2">Wallet Address</p>
 
-              <div className="bg-black border border-[#81ECFF] rounded-lg p-2 text-xs mb-3 truncate">
-                {wallet}
+              <div className="bg-black border border-[#81ECFF] rounded-lg p-3 text-xs mb-4 break-all font-mono">
+                {walletAddress}
               </div>
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleCopy(wallet)}
-                  className="flex-1 
-bg-[linear-gradient(45deg,#587FFF,#09239F)] 
-hover:bg-[linear-gradient(45deg,#6C8CFF,#0B2ED1)]
-text-white text-sm py-3 rounded-full 
-flex items-center justify-center gap-2 transition-all"
+                  onClick={() => handleCopy(walletAddress)}
+                  className="flex-1 bg-[linear-gradient(45deg,#587FFF,#09239F)] hover:brightness-110 text-white text-sm py-3 rounded-full flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Copy size={16} />
                   Copy
                 </button>
 
                 <button
-                  onClick={() => handleShare(wallet)}
-                  className="flex-1 
-bg-[linear-gradient(45deg,#587FFF,#09239F)] 
-hover:bg-[linear-gradient(45deg,#6C8CFF,#0B2ED1)]
-text-white text-sm py-3 rounded-full 
-flex items-center justify-center gap-2 transition-all"
+                  onClick={() => handleShare(walletAddress)}
+                  className="flex-1 bg-[linear-gradient(45deg,#587FFF,#09239F)] hover:brightness-110 text-white text-sm py-3 rounded-full flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Share2 size={16} />
                   Share
@@ -195,47 +185,48 @@ flex items-center justify-center gap-2 transition-all"
             </div>
           </div>
 
-          {/* AMOUNT */}
+          {/* AMOUNT DETAILS */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
             <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
               <p className="text-xs text-gray-400 mb-1">Amount to Pay</p>
-
-              <h2 className="text-xl font-bold">
-                {amount || "0"} {coin?.name || "USDT"}
+              <h2 className="text-2xl font-bold text-white">
+                {amount} {coin?.name || "USDT"}
               </h2>
-
-              <p className="text-xs text-blue-400 mt-1">
-                Binance Smart Chain (BEP20)
+              <p className="text-xs text-blue-400 mt-2">
+                Binance Smart Chain (BEP20) • TRC20
+              </p>
+              <p className="text-[10px] text-gray-500 mt-1">
+                Send exact amount only • Single transaction
               </p>
             </div>
           </div>
 
-          {/* BUTTONS */}
-          <div className="flex gap-3">
+          {/* ACTION BUTTONS */}
+          <div className="flex gap-3 pt-4">
             <button
               onClick={handleCancel}
-              className="w-full py-3 rounded-xl border border-red-500/40
-              bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
+              className="w-full py-3.5 rounded-xl border border-red-500/40 bg-red-500/10 text-red-400 font-medium hover:bg-red-500/20 transition active:scale-95"
             >
               Cancel
             </button>
 
             <button
               onClick={handleComplete}
-              className="w-full py-3 rounded-xl font-semibold
-              bg-gradient-to-r from-[#587FFF] to-[#09239F]
-              shadow-lg shadow-blue-500/30
-              hover:scale-[1.02] transition"
+              className="w-full py-3.5 rounded-xl font-semibold text-white
+                bg-gradient-to-r from-[#587FFF] to-[#09239F]
+                shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition active:scale-95"
             >
-              Complete
+              I Have Completed Payment
             </button>
           </div>
 
+          {/* Warning */}
+          <p className="text-center text-[10px] text-gray-500 pt-2">
+            Funds will be credited automatically after network confirmation
+          </p>
+
         </div>
       </div>
-
-      {/* TOAST */}
-      <Toast />
 
       <Footer />
     </div>
