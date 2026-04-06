@@ -58,8 +58,10 @@ const Profile = () => {
   }, []);
 
   // ✅ Referral Dynamic
-  const referralLink = `https://yourapp.com/ref/${apiUser?.referralCode || "loading"
-    }`;
+  // const referralLink = `https://yourapp.com/ref/${apiUser?.referralCode || "loading"
+  //   }`;
+
+  const referralLink = `https://t.me/CiperaBot?start=${apiUser?.referralCode || "loading" }`;
 
   // ✅ Share
   const handleShare = () => {
