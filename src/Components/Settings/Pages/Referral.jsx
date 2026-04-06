@@ -210,7 +210,7 @@ const Referral = () => {
                       <th className="px-4 py-3 text-left">ID</th>
                       <th className="px-4 py-3 text-left">Name</th>
                       <th className="px-4 py-3 text-left">Level</th>
-                      <th className="px-4 py-3 text-center">Self Investment</th>
+                      <th className="px-4 py-3 text-center">Investment</th>
                       <th className="px-4 py-3 text-right">Date</th>
                     </tr>
                   </thead>
