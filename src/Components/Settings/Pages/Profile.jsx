@@ -16,12 +16,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // ✅ Telegram + API Integration
- useEffect(() => {
+// 🔥 Replace your initTelegram useEffect with this improved version
+
+useEffect(() => {
   const initTelegram = async () => {
     try {
       const tg = window.Telegram?.WebApp;
-
-      // ❌ Not inside Telegram
       if (!tg) {
         console.log("Not inside Telegram");
         setLoading(false);
@@ -30,7 +30,6 @@ const Profile = () => {
 
       tg.ready();
 
-      // ❌ No Telegram user
       const user = tg.initDataUnsafe?.user;
       if (!user) {
         console.log("No Telegram user found");
@@ -40,26 +39,17 @@ const Profile = () => {
 
       setTgUser(user);
 
-      // 🔥 Referral sources
+      // Referral logic...
       const urlParams = new URLSearchParams(window.location.search);
       const refFromUrl = urlParams.get("ref");
       const refFromTG = tg.initDataUnsafe?.start_param;
       const refFromStorage = localStorage.getItem("referral");
-
       const referralCode = refFromTG || refFromUrl || refFromStorage;
 
-      // 💾 Save referral
       if (referralCode) {
         localStorage.setItem("referral", referralCode);
       }
 
-      // 🧠 Debug logs (important)
-      console.log("refFromTG:", refFromTG);
-      console.log("refFromUrl:", refFromUrl);
-      console.log("refFromStorage:", refFromStorage);
-      console.log("FINAL REF:", referralCode);
-
-      // 🔥 API CALL
       const res = await api.post("/user/telegram-login", {
         telegramId: user.id,
         name: `${user.first_name} ${user.last_name || ""}`,
@@ -68,17 +58,22 @@ const Profile = () => {
       });
 
       const data = res.data;
-      console.log("API RESPONSE:", data);
 
       if (data.success) {
         setApiUser(data.user);
+
+        // ✅ IMPORTANT: Save user data properly
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.user.userId || data.user._id);   // ← Added
+        localStorage.setItem("user", JSON.stringify(data.user));           // ← Most Important
+
+        console.log("User saved to localStorage:", data.user);
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "Login failed");
       }
 
     } catch (error) {
-      console.log(error);
+      console.error("Telegram Login Error:", error);
       toast.error("API Error ❌");
     } finally {
       setLoading(false);

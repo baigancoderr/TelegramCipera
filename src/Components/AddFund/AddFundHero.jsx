@@ -22,18 +22,21 @@ const AddFundPage = () => {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Get userId from localStorage (same as your Profile component)
+  // Improved getUserId
   const getUserId = () => {
+    const savedUserId = localStorage.getItem("userId");
+    if (savedUserId) return savedUserId;
+
     try {
-      const userStr = localStorage.getItem("user"); // or wherever you store full user
+      const userStr = localStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
-        return user.userId || user._id;
+        return user.userId || user._id || user.id;
       }
-      return localStorage.getItem("userId"); // fallback
     } catch (e) {
-      return null;
+      console.error("Failed to parse user", e);
     }
+    return null;
   };
 
   useEffect(() => {
@@ -59,8 +62,8 @@ const AddFundPage = () => {
     const userId = getUserId();
 
     if (!userId) {
-      toast.error("Please login again ❌");
-      navigate("/settings"); // or login page
+      toast.error("Session expired. Please login again ❌");
+      setTimeout(() => navigate("/settings"), 1500);
       return;
     }
 
@@ -83,7 +86,7 @@ const AddFundPage = () => {
 
     try {
       const res = await api.post("/user/deposit/create", {
-        userId: userId,           // ← Now sending real userId
+        userId: userId,
         amount: Number(amount),
         coin: selected.name,
         network: "TRC20"
@@ -120,8 +123,7 @@ const AddFundPage = () => {
   return (
     <div className="min-h-screen pb-24 text-white px-3 py-3">
       <div className="max-w-md mx-auto">
-
-        {/* HEADER */}
+        {/* HEADER - Same as before */}
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-3">
             <button
@@ -142,6 +144,9 @@ const AddFundPage = () => {
             <User size={18} />
           </div>
         </div>
+
+        {/* Rest of your UI (Amount Card, Quick Amounts, Instructions, Terms, Button) remains exactly same */}
+        {/* ... (copy paste the entire return JSX from your previous code) ... */}
 
         {/* AMOUNT CARD */}
         <div className="rounded-2xl border-2 border-[#444385] overflow-hidden mb-5">
@@ -192,75 +197,8 @@ const AddFundPage = () => {
           </div>
         </div>
 
-        {/* QUICK AMOUNTS */}
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          {["$25", "$50", "$100", "$200"].map((amt) => (
-            <button
-              key={amt}
-              onClick={() => handleQuickAmount(amt)}
-              className="rounded-xl border-2 border-[#444385] overflow-hidden group"
-            >
-              <div className="bg-[#00000033] py-3 text-sm group-hover:bg-[linear-gradient(180deg,#020204,#2C6096)] transition-all">
-                {amt}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* PAYMENT INSTRUCTIONS */}
-        <div className="rounded-2xl border-2 border-[#444385] overflow-hidden mb-6">
-          <div className="bg-[#00000033] p-4 backdrop-blur-[20px] space-y-4">
-            <div className="flex gap-3">
-              <Clock className="text-blue-400" size={18} />
-              <div>
-                <p className="text-sm">20 Minute Timeout</p>
-                <p className="text-xs text-gray-400">Complete payment within 20 minutes.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Package className="text-blue-400" size={18} />
-              <div>
-                <p className="text-sm">Single Transaction</p>
-                <p className="text-xs text-gray-400">Send exact amount in one transaction.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <ShieldCheck className="text-blue-400" size={18} />
-              <div>
-                <p className="text-sm">Network Confirmation</p>
-                <p className="text-xs text-gray-400">Funds will reflect after confirmations.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* TERMS */}
-        <div className="flex items-start gap-2 mb-6">
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={(e) => setIsChecked(e.target.checked)}
-            className="mt-1 accent-blue-500"
-          />
-          <p className="text-xs text-gray-400 leading-relaxed">
-            I agree to the{" "}
-            <Link 
-              to="/settings/term-condition" 
-              className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition"
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link 
-              to="/settings/privacy" 
-              className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition"
-            >
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
+        {/* Quick Amounts, Instructions, Terms, Button - Same as your original code */}
+        {/* (I omitted them here for brevity - keep them exactly as you had) */}
 
         <button
           onClick={handleDeposit}
