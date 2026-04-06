@@ -79,8 +79,8 @@ const AddFundPage = () => {
       return;
     }
 
-    if (Number(amount) < 2) {
-      toast.error("Minimum deposit is $2 USDT");
+    if (Number(amount) < 0.1) {
+      toast.error("Minimum deposit is $.2 USDT");
       return;
     }
 
