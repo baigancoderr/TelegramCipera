@@ -12,36 +12,30 @@ import toast from "react-hot-toast";
 const AddFundPage = () => {
   const navigate = useNavigate();
 
-  // const coins = [{ name: "USDT", icon: usdt }];
-  const coin = "USDT";
-  
   const [isChecked, setIsChecked] = useState(false);
-  // const [selected, setSelected] = useState(coins[0]);
   const [amount, setAmount] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState({});
 
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
+  const networks = [
+    { label: "TRC20", value: "TRC20", icon: usdt },
+    { label: "BEP20", value: "BEP20", icon: usdt },
+    { label: "ERC20", value: "ERC20_USDT", icon: usdt },
+    { label: "ERC20", value: "ERC20_USDC", icon: usdc },
+    { label: "Polygon", value: "POLYGON_USDT", icon: usdt }
+  ];
 
-const networks = [
-  { label: "TRC20", value: "TRC20", icon: usdt },
-  { label: "BEP20", value: "BEP20", icon: usdt },
-  { label: "ERC20", value: "ERC20_USDT", icon: usdt },
-  { label: "ERC20", value: "ERC20_USDC", icon: usdc },
-  { label: "Polygon", value: "POLYGON_USDT", icon: usdt }
-];
+  const [network, setNetwork] = useState("TRC20");
 
-const [network, setNetwork] = useState("TRC20");
-
-  // Improved getUserId Function
+  // Get UserId
   const getUserId = () => {
-    // Priority 1: Direct userId
     const savedUserId = localStorage.getItem("userId");
     if (savedUserId) return savedUserId;
 
-    // Priority 2: Full user object
     try {
       const userStr = localStorage.getItem("user");
       if (userStr) {
@@ -54,22 +48,46 @@ const [network, setNetwork] = useState("TRC20");
     return null;
   };
 
- useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(e.target) &&
-      buttonRef.current &&
-      !buttonRef.current.contains(e.target)
-    ) {
-      setOpen(false);
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // Dynamic Dropdown Position (Right side + Below)
+  useEffect(() => {
+    if (open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 245; // 5 items ke hisaab se approx height
+
+      let topPosition = rect.bottom + 8; // button ke niche 8px gap
+
+      // Agar bottom mein space nahi hai toh thoda upar shift kar do
+      if (topPosition + dropdownHeight > viewportHeight - 20) {
+        topPosition = Math.max(rect.top - dropdownHeight - 8, 20);
+      }
+
+      setDropdownStyle({
+        position: "fixed",
+        top: `${topPosition}px`,
+        left: `${rect.right - 160}px`,   // right side align (160px = w-40)
+        width: "160px",                  // max-width 40 (w-40)
+        zIndex: 9999,
+      });
     }
-  };
-
-  document.addEventListener("click", handleClickOutside); // ✅ click (NOT mousedown)
-
-  return () => document.removeEventListener("click", handleClickOutside);
-}, []);
+  }, [open]);
 
   const handleQuickAmount = (value) => {
     setAmount(value.replace("$", ""));
@@ -94,7 +112,7 @@ const [network, setNetwork] = useState("TRC20");
       return;
     }
 
-    if (Number(amount) < 0.1) {
+    if (Number(amount) < 0.2) {
       toast.error("Minimum deposit is $0.2 USDT");
       return;
     }
@@ -102,28 +120,28 @@ const [network, setNetwork] = useState("TRC20");
     setLoading(true);
 
     try {
-    const res = await api.post("/user/deposit/create", {
-  userId,
-  amount: Number(amount),
- coin: network === "ERC20_USDC" ? "USDC" : "USDT",
-  network
-});
+      const res = await api.post("/user/deposit/create", {
+        userId,
+        amount: Number(amount),
+        coin: network === "ERC20_USDC" ? "USDC" : "USDT",
+        network
+      });
 
-const data = res.data;
+      const data = res.data;
 
       if (data.success && data.data?.address_in) {
         toast.success("Payment address generated ✅");
 
-       navigate("/payment", {
-  state: {
-    amount,
-    coin: "USDT",
-    network, // ✅ ADD THIS
-    walletAddress: data.data.address_in,
-    qrData: data.data.address_in,
-    callbackInfo: data.data,
-  },
-});
+        navigate("/payment", {
+          state: {
+            amount,
+            coin: "USDT",
+            network,
+            walletAddress: data.data.address_in,
+            qrData: data.data.address_in,
+            callbackInfo: data.data,
+          },
+        });
       } else {
         toast.error(data.message || "Failed to generate address");
       }
@@ -164,82 +182,49 @@ const data = res.data;
           </div>
         </div>
 
-    
-   
-{/* AMOUNT CARD */}
-<div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-5 relative">
-  <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
-    <p className="text-gray-400 text-xs mb-2">Enter Amount</p>
+        {/* AMOUNT CARD */}
+        <div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-5 relative">
+          <div className="bg-[#00000033] p-4 backdrop-blur-[20px] rounded-2xl">
+            <p className="text-gray-400 text-xs mb-2">Enter Amount</p>
 
-    <div className="flex items-center bg-black border border-[#444385] rounded-lg px-3 py-2 relative" ref={buttonRef}>
-      
-      {/* INPUT */}
-      <input
-        type="number"
-        placeholder="0.00"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        className="bg-transparent outline-none text-white flex-1 min-w-0"
-      />
-
-      {/* NETWORK SELECT BUTTON */}
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-        className="flex items-center gap-2 cursor-pointer ml-2 shrink-0 z-10"
-      >
-        <div className="flex items-center gap-2">
-          <img
-            src={networks.find(n => n.value === network)?.icon}
-            alt="coin"
-            className="w-4 h-4"
-          />
-          <span className="text-sm whitespace-nowrap">
-            {networks.find(n => n.value === network)?.label}
-          </span>
-        </div>
-        <span className="text-xs text-gray-400">▼</span>
-      </div>
-
-      {/* IMPROVED DROPDOWN */}
-      {open && (
-        <div
-          ref={dropdownRef}
-          className={`absolute right-0 w-56 bg-black border border-[#444385] 
-                     rounded-xl shadow-2xl z-[9999] overflow-hidden
-                     ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-          style={{
-            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6)'
-          }}
-        >
-          {networks.map((net) => (
-            <div
-              key={net.value}
-              onClick={(e) => {
-                e.stopPropagation();
-                setNetwork(net.value);
-                setOpen(false);
-              }}
-              className="px-4 py-3.5 cursor-pointer text-sm hover:bg-[#444385]/70 
-                         transition-colors flex items-center gap-3 active:bg-[#444385]"
+            <div 
+              ref={buttonRef}
+              className="flex items-center bg-black border border-[#444385] rounded-lg px-3 py-2 relative"
             >
-              <img 
-                src={net.icon} 
-                alt="coin" 
-                className="w-5 h-5" 
+              {/* INPUT */}
+              <input
+                type="number"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="bg-transparent outline-none text-white flex-1 min-w-0"
               />
-              <span>{net.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
 
-    <p className="text-xs text-blue-400 mt-2">Minimum: $0.2 USDT</p>
-  </div>
-</div>
+              {/* NETWORK SELECT BUTTON */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(!open);
+                }}
+                className="flex items-center gap-2 cursor-pointer ml-3 shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <img
+                    src={networks.find(n => n.value === network)?.icon}
+                    alt="coin"
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm whitespace-nowrap">
+                    {networks.find(n => n.value === network)?.label}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-400">▼</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-blue-400 mt-2">Minimum: $0.2 USDT</p>
+          </div>
+        </div>
 
         {/* QUICK AMOUNTS */}
         <div className="grid grid-cols-4 gap-3 mb-5">
@@ -319,6 +304,35 @@ const data = res.data;
         >
           {loading ? "Generating Address..." : "Deposit"}
         </button>
+
+        {/* DROPDOWN - Right Side + Below Network Button */}
+        {open && (
+          <div
+            ref={dropdownRef}
+            style={dropdownStyle}
+            className="bg-black border border-[#444385] rounded-xl shadow-2xl overflow-hidden"
+          >
+            {networks.map((net) => (
+              <div
+                key={net.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNetwork(net.value);
+                  setOpen(false);
+                }}
+                className="px-4 py-3.5 cursor-pointer text-sm hover:bg-[#444385]/70 
+                           transition-colors flex items-center gap-3 active:bg-[#444385]"
+              >
+                <img 
+                  src={net.icon} 
+                  alt="coin" 
+                  className="w-5 h-5" 
+                />
+                <span>{net.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
       </div>
     </div>
