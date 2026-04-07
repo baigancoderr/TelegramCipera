@@ -220,7 +220,13 @@ const Referral = () => {
                             {indexOfFirst + i + 1}
                           </td>
                           <td className="px-4 py-3">{item.id}</td>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          {/* <td className="px-4 py-3 font-medium">{item.name}</td> */}
+                         <td
+  className="px-4 py-3 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]"
+  title={item.name}
+>
+  {item.name}
+</td>
                           <td className="px-4 py-3">
                             <span
                               className={`text-xs px-3 py-1 rounded-full ${
