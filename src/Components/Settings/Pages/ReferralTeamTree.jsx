@@ -136,7 +136,7 @@ const ReferralTeamTree = () => {
                     marginTop: "6px",
                   }}
                 >
-                  Self Investment: ₹{Number(attrs.SelfInvestment).toLocaleString("en-IN")}
+                Investment: {Number(attrs.SelfInvestment).toLocaleString("en-IN")}
                 </p>
               </div>
             </div>
@@ -147,7 +147,7 @@ const ReferralTeamTree = () => {
         {hasChildren && (
           <text
             x="0"
-            y="58"
+            y="50 "
             textAnchor="middle"
             fontSize="26"
             fill="#60a5fa"
