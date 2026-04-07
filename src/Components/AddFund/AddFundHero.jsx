@@ -21,15 +21,16 @@ const AddFundPage = () => {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
+  // ✅ Only your 5 required networks
   const networks = [
-    { label: "TRC20", value: "TRC20", icon: usdt },
-    { label: "BEP20", value: "BEP20", icon: usdt },
-    { label: "ERC20", value: "ERC20_USDT", icon: usdt },
-    { label: "ERC20", value: "ERC20_USDC", icon: usdc },
-    { label: "Polygon", value: "POLYGON_USDT", icon: usdt }
+    { label: "Web20 USDT",     value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
+    { label: "Base USDT",      value: "BASE_USDT",    icon: usdt, coin: "USDT" },
+    { label: "Base USDC",      value: "BASE_USDC",    icon: usdc, coin: "USDC" },
+    { label: "ETH USDT",       value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
+    { label: "Polygon USDT",   value: "POLYGON_USDT", icon: usdt, coin: "USDT" }
   ];
 
-  const [network, setNetwork] = useState("TRC20");
+  const [selectedNetwork, setSelectedNetwork] = useState("WEB20_USDT");
 
   // Get UserId
   const getUserId = () => {
@@ -65,16 +66,15 @@ const AddFundPage = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Dynamic Dropdown Position (Right side + Below)
+  // Dynamic Dropdown Position
   useEffect(() => {
     if (open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      const dropdownHeight = 245; // 5 items ke hisaab se approx height
+      const dropdownHeight = 260;
 
-      let topPosition = rect.bottom + 8; // button ke niche 8px gap
+      let topPosition = rect.bottom + 8;
 
-      // Agar bottom mein space nahi hai toh thoda upar shift kar do
       if (topPosition + dropdownHeight > viewportHeight - 20) {
         topPosition = Math.max(rect.top - dropdownHeight - 8, 20);
       }
@@ -82,8 +82,8 @@ const AddFundPage = () => {
       setDropdownStyle({
         position: "fixed",
         top: `${topPosition}px`,
-        left: `${rect.right - 160}px`,   // right side align (160px = w-40)
-        width: "160px",                  // max-width 40 (w-40)
+        left: `${rect.right - 200}px`,
+        width: "200px",
         zIndex: 9999,
       });
     }
@@ -120,11 +120,12 @@ const AddFundPage = () => {
     setLoading(true);
 
     try {
+      const selected = networks.find(n => n.value === selectedNetwork);
+
       const res = await api.post("/user/deposit/create", {
         userId,
         amount: Number(amount),
-        coin: network === "ERC20_USDC" ? "USDC" : "USDT",
-        network
+        network: selectedNetwork,
       });
 
       const data = res.data;
@@ -135,8 +136,8 @@ const AddFundPage = () => {
         navigate("/payment", {
           state: {
             amount,
-            coin: "USDT",
-            network,
+            coin: selected.coin,
+            network: selected.label,
             walletAddress: data.data.address_in,
             qrData: data.data.address_in,
             callbackInfo: data.data,
@@ -210,12 +211,12 @@ const AddFundPage = () => {
               >
                 <div className="flex items-center gap-2">
                   <img
-                    src={networks.find(n => n.value === network)?.icon}
+                    src={networks.find(n => n.value === selectedNetwork)?.icon}
                     alt="coin"
                     className="w-4 h-4"
                   />
                   <span className="text-sm whitespace-nowrap">
-                    {networks.find(n => n.value === network)?.label}
+                    {networks.find(n => n.value === selectedNetwork)?.label}
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">▼</span>
@@ -305,7 +306,7 @@ const AddFundPage = () => {
           {loading ? "Generating Address..." : "Deposit"}
         </button>
 
-        {/* DROPDOWN - Right Side + Below Network Button */}
+        {/* DROPDOWN */}
         {open && (
           <div
             ref={dropdownRef}
@@ -317,7 +318,7 @@ const AddFundPage = () => {
                 key={net.value}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setNetwork(net.value);
+                  setSelectedNetwork(net.value);
                   setOpen(false);
                 }}
                 className="px-4 py-3.5 cursor-pointer text-sm hover:bg-[#444385]/70 
