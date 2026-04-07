@@ -94,68 +94,94 @@ const AddFundPage = () => {
   };
 
   const handleDeposit = async () => {
-    const userId = getUserId();
+  const userId = getUserId();
 
-    if (!userId) {
-      toast.error("Session expired. Please login again ❌");
-      setTimeout(() => navigate("/settings"), 1500);
+  if (!userId) {
+    toast.error("Session expired. Please login again ❌");
+    setTimeout(() => navigate("/settings"), 1500);
+    return;
+  }
+
+  if (!amount || Number(amount) <= 0) {
+    toast.error("Please Enter Your Amount ❌");
+    return;
+  }
+
+  if (!isChecked) {
+    toast.error("Please Accept Terms & Conditions ❌");
+    return;
+  }
+
+  if (Number(amount) < 0.2) {
+    toast.error("Minimum deposit is $0.2 USDT");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const selected = networks.find(n => n.value === selectedNetwork);
+
+    if (!selected) {
+      toast.error("Invalid network selected");
       return;
     }
 
-    if (!amount || Number(amount) <= 0) {
-      toast.error("Please Enter Your Amount ❌");
-      return;
-    }
+    console.log(`🔄 Creating deposit:`, {
+      userId,
+      amount: Number(amount),
+      network: selectedNetwork,
+      coin: selected.coin
+    });
 
-    if (!isChecked) {
-      toast.error("Please Accept Terms & Conditions ❌");
-      return;
-    }
+    const res = await api.post("/user/deposit/create", {
+      userId,
+      amount: Number(amount),
+      network: selectedNetwork,
+    });
 
-    if (Number(amount) < 0.2) {
-      toast.error("Minimum deposit is $0.2 USDT");
-      return;
-    }
+    const data = res.data;
 
-    setLoading(true);
+    if (data.success && data.data?.address_in) {
+      toast.success("Payment address generated successfully ✅");
 
-    try {
-      const selected = networks.find(n => n.value === selectedNetwork);
-
-      const res = await api.post("/user/deposit/create", {
-        userId,
-        amount: Number(amount),
-        network: selectedNetwork,
+      navigate("/payment", {
+        state: {
+          amount,
+          coin: selected.coin,
+          network: selected.label,
+          walletAddress: data.data.address_in,
+          qrData: data.data.address_in,
+          callbackInfo: data.data,
+        },
       });
-
-      const data = res.data;
-
-      if (data.success && data.data?.address_in) {
-        toast.success("Payment address generated ✅");
-
-        navigate("/payment", {
-          state: {
-            amount,
-            coin: selected.coin,
-            network: selected.label,
-            walletAddress: data.data.address_in,
-            qrData: data.data.address_in,
-            callbackInfo: data.data,
-          },
-        });
-      } else {
-        toast.error(data.message || "Failed to generate address");
-      }
-    } catch (error) {
-      console.error("Deposit API Error:", error);
-      const msg = error.response?.data?.message || 
-                  error.response?.data?.error || 
-                  "Something went wrong";
-      toast.error(msg);
-    } finally {
-      setLoading(false);
+    } else {
+      const errorMsg = data.message || data.error || "Failed to generate address";
+      console.warn("API returned failure:", data);
+      toast.error(errorMsg);
     }
-  };
+  } catch (error) {
+    console.error("❌ Deposit API Error Details:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+
+    let msg = "Something went wrong. Please try again.";
+
+    if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    } else if (error.response?.data?.error) {
+      msg = error.response.data.error;
+    } else if (error.message && error.message.includes("Network Error")) {
+      msg = "Network error. Please check your internet connection.";
+    }
+
+    toast.error(msg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen pb-24 text-white px-3 py-3">
