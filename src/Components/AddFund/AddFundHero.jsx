@@ -164,12 +164,14 @@ const data = res.data;
           </div>
         </div>
 
-        {/* AMOUNT CARD */}
-    <div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-5">
+    
+   
+{/* AMOUNT CARD */}
+<div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-5 relative">
   <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
     <p className="text-gray-400 text-xs mb-2">Enter Amount</p>
 
-    <div className="flex items-center bg-black border border-[#444385] rounded-lg px-3 py-2 relative">
+    <div className="flex items-center bg-black border border-[#444385] rounded-lg px-3 py-2 relative" ref={buttonRef}>
       
       {/* INPUT */}
       <input
@@ -180,48 +182,55 @@ const data = res.data;
         className="bg-transparent outline-none text-white flex-1 min-w-0"
       />
 
-      {/* NETWORK DROPDOWN BUTTON */}
+      {/* NETWORK SELECT BUTTON */}
       <div
-        ref={buttonRef}
         onClick={(e) => {
-          e.stopPropagation(); // 🔥 IMPORTANT
+          e.stopPropagation();
           setOpen(!open);
         }}
-        className="flex items-center gap-2 cursor-pointer ml-2 shrink-0"
+        className="flex items-center gap-2 cursor-pointer ml-2 shrink-0 z-10"
       >
-       <div className="flex items-center gap-2">
-  <img
-    src={networks.find(n => n.value === network)?.icon}
-    alt="coin"
-    className="w-4 h-4"
-  />
-  <span className="text-sm whitespace-nowrap">
-    {networks.find(n => n.value === network)?.label}
-  </span>
-</div>
+        <div className="flex items-center gap-2">
+          <img
+            src={networks.find(n => n.value === network)?.icon}
+            alt="coin"
+            className="w-4 h-4"
+          />
+          <span className="text-sm whitespace-nowrap">
+            {networks.find(n => n.value === network)?.label}
+          </span>
+        </div>
         <span className="text-xs text-gray-400">▼</span>
       </div>
 
-      {/* DROPDOWN */}
+      {/* IMPROVED DROPDOWN */}
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full mt-2 w-56 bg-black border border-[#444385] rounded-md z-[999] shadow-lg"
+          className={`absolute right-0 w-56 bg-black border border-[#444385] 
+                     rounded-xl shadow-2xl z-[9999] overflow-hidden
+                     ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+          style={{
+            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6)'
+          }}
         >
           {networks.map((net) => (
             <div
               key={net.value}
               onClick={(e) => {
-                e.stopPropagation(); // 🔥 IMPORTANT
+                e.stopPropagation();
                 setNetwork(net.value);
                 setOpen(false);
               }}
-              className="px-3 py-2 cursor-pointer text-sm hover:bg-[#444385]/50 transition"
+              className="px-4 py-3.5 cursor-pointer text-sm hover:bg-[#444385]/70 
+                         transition-colors flex items-center gap-3 active:bg-[#444385]"
             >
-             <div className="flex items-center gap-2">
-  <img src={net.icon} alt="coin" className="w-4 h-4" />
-  <span>{net.label}</span>
-</div>
+              <img 
+                src={net.icon} 
+                alt="coin" 
+                className="w-5 h-5" 
+              />
+              <span>{net.label}</span>
             </div>
           ))}
         </div>
@@ -248,7 +257,7 @@ const data = res.data;
         </div>
 
         {/* PAYMENT INSTRUCTIONS */}
-        <div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-6">
+        <div className="rounded-2xl border-2 border-[#444385] overflow-hidden mb-6">
           <div className="bg-[#00000033] p-4 backdrop-blur-[20px] space-y-4">
             <div className="flex gap-3">
               <Clock className="text-blue-400" size={18} />
