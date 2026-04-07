@@ -248,7 +248,7 @@ const data = res.data;
         </div>
 
         {/* PAYMENT INSTRUCTIONS */}
-        <div className="rounded-2xl border-2 border-[#444385] overflow-hidden mb-6">
+        <div className="rounded-2xl border-2 border-[#444385] overflow-visible mb-6">
           <div className="bg-[#00000033] p-4 backdrop-blur-[20px] space-y-4">
             <div className="flex gap-3">
               <Clock className="text-blue-400" size={18} />
