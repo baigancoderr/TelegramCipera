@@ -148,12 +148,12 @@ const Referral = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-4">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-4 hover:border-blue-400">
             <div className="flex items-center gap-2 mb-3">
               <Users size={20} className="text-emerald-400" />
               <p className="text-xs text-gray-400">Direct Referrals</p>
             </div>
-            <p className="text-3xl font-bold">{loading ? "..." : directReferrals}</p>
+            <p className="text-xl font-bold">{loading ? "..." : directReferrals}</p>
             <p className="text-emerald-400 text-sm mt-1">Active Users</p>
           </div>
 
@@ -165,7 +165,7 @@ const Referral = () => {
               <Network size={20} className="text-blue-400" />
               <p className="text-xs text-gray-400">Team Size</p>
             </div>
-            <p className="text-3xl font-bold">{loading ? "..." : teamSize}</p>
+            <p className="text-xl font-bold">{loading ? "..." : teamSize}</p>
             <p className="text-blue-400 text-sm mt-1">View Full Tree →</p>
           </div>
         </div>
