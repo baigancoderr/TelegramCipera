@@ -37,9 +37,9 @@ ChartJS.register(
 
 const HomeDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("1D");
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // const [dashboardData, setDashboardData] = useState(null);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -64,18 +64,22 @@ const HomeDashboard = () => {
   };
 
   // Fetch Dashboard Data from Backend
-  useEffect(() => {
-    const { data, isLoading, error } = useQuery({
+const {
+  data,
+  isLoading,
+  error,
+} = useQuery({
   queryKey: ["dashboard"],
   queryFn: () =>
-    api.get("/user/dashboard", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    }).then(res => res.data),
+    api
+      .get("/user/dashboard", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => res.data),
   staleTime: 1000 * 60 * 5,
 });
-  }, []);
 
   // Share Handler
   const handleShare = () => {
