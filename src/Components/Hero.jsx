@@ -82,56 +82,43 @@ const {
 });
 
   // Share Handler
-  const handleShare = () => {
-    const referralLink = dashboardData?.dashboard?.referralLink;
-    if (!referralLink) return;
+ const handleShare = () => {
+  const referralLink = data?.dashboard?.referralLink;
+  if (!referralLink) return;
 
-    const text = "Join Cipera and start earning daily! 🚀";
+  const text = "Join Cipera and start earning daily! 🚀";
 
-    if (window.Telegram?.WebApp) {
-      const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
-        referralLink
-      )}&text=${encodeURIComponent(text)}`;
-      window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
-    } else if (navigator.share) {
-      navigator.share({
-        title: "Join Now 🚀",
-        text,
-        url: referralLink,
-      });
-    } else {
-      window.open(
-        `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`,
-        "_blank"
-      );
-    }
-  };
+  if (window.Telegram?.WebApp) {
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+      referralLink
+    )}&text=${encodeURIComponent(text)}`;
+    window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
+  } else if (navigator.share) {
+    navigator.share({
+      title: "Join Now 🚀",
+      text,
+      url: referralLink,
+    });
+  } else {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`,
+      "_blank"
+    );
+  }
+};
 
   // Copy Handler
-  const handleCopy = async () => {
-    const referralLink = dashboardData?.dashboard?.referralLink;
-    if (!referralLink) return;
+ const handleCopy = async () => {
+  const referralLink = data?.dashboard?.referralLink;
+  if (!referralLink) return;
 
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(referralLink);
-        toast.success("Referral link copied! 🚀");
-      } else {
-        // Fallback
-        const textArea = document.createElement("textarea");
-        textArea.value = referralLink;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        toast.success("Referral link copied! 🚀");
-      }
-    } catch (err) {
-      toast.error("Failed to copy link");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(referralLink);
+    toast.success("Referral link copied! 🚀");
+  } catch (err) {
+    toast.error("Failed to copy link");
+  }
+};
 
   // Chart Data (Static for now - you can make it dynamic later)
   const chartDataset = {
