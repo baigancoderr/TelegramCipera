@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation ,Navigate  } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import Homepage from "../Pages/Homepage";
@@ -51,7 +51,9 @@ if (!ALLOW_BROWSER) {
 
       {/* 🔥 ROUTES */}
       <Routes>
-        <Route path="/" element={<Homepage />} />
+      <Route path="/" element={<Navigate to="/settings/profile" replace />} />
+
+          <Route path="/home" element={<Homepage />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/invest" element={<Upgrade />} />
         <Route path="/addfund" element={<AddFund />} />
