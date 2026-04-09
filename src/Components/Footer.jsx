@@ -51,7 +51,7 @@ const Footer = () => {
 
           {renderIcon(Wallet, "/wallet", "Wallet")}
           {renderIcon(Plus, "/addfund", "Add")}
-          {renderIcon(Home, "/", "Home")}
+          {renderIcon(Home, "/home", "Home")}
           {renderIcon(TrendingUp, "/invest", "Invest")}
           {renderIcon(User, "/settings", "Profile")}
 
