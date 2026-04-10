@@ -43,64 +43,62 @@ useEffect(() => {
 
       setTgUser(user);
 
-      // ================== REFERRAL CODE LOGIC ==================
+      // Referral logic...
       const urlParams = new URLSearchParams(window.location.search);
       const refFromUrl = urlParams.get("ref");
       const refFromTG = tg.initDataUnsafe?.start_param;
+      // const refFromStorage = localStorage.getItem("referral");
+const referralCode = refFromTG || refFromUrl || localStorage.getItem("referral");
 
-      let referralCode = refFromTG || refFromUrl || localStorage.getItem("referral");
+if (referralCode) {
+  localStorage.setItem("referral", referralCode);
+} else {
+  // ❌ Only when NO referral from TG or URL
+  setShowReferralPopup(true);
+  setLoading(false);
+  return;
+}
 
-      // Clear old referral if user was deleted (important)
-      if (!referralCode) {
-        localStorage.removeItem("referral");
-      }
-
-      // Agar referralCode hai to save kar lo
-      if (referralCode) {
-        localStorage.setItem("referral", referralCode);
-      }
-
-      // Call API - referralCode bhejna zaroori hai (chahe empty ho)
       const res = await api.post("/user/telegram-login", {
         telegramId: user.id,
-        name: `${user.first_name} ${user.last_name || ""}`.trim(),
+        name: `${user.first_name} ${user.last_name || ""}`,
         username: user.username || "",
-        referralCode: referralCode || null,   // ← null bhej rahe hain agar nahi hai
+        referralCode: referralCode,
       });
 
       const data = res.data;
 
-      if (data.success) {
-        setApiUser(data.user);
+    if (data.success) {
+  setApiUser(data.user);
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userId", data.user.userId || data.user._id);
-        localStorage.setItem("user", JSON.stringify(data.user));
+//   setTimeout(() => {
+//   const storedUser = JSON.parse(localStorage.getItem("user"));
+//   if (storedUser) {
+//     setApiUser(storedUser);
+//   }
+// }, 300);
 
-        console.log("✅ User logged in:", data.user);
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userId", data.user.userId || data.user._id);
+  localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Agar user ke paas referredBy nahi hai aur pehla user nahi hai to popup dikhao
-        if (data.user.referredBy === null || data.user.referredBy === "SYSTEM") {
-          // Optional: agar chahte ho to popup dikha sakte ho
-        }
+  console.log("User saved to localStorage:", data.user);
 
-        setLoading(false);
-      } else {
-        toast.error(data.message || "Login failed");
-        setLoading(false);
-      }
+  setLoading(false); // ✅ ADD THIS
+} else {
+  toast.error(data.message || "Login failed");
+  setLoading(false); // ✅ ADD THIS
+}
 
     } catch (error) {
-      console.error("Telegram Login Error:", error);
+  console.error("Telegram Login Error:", error);
+  toast.error("API Error ❌");
 
-      // Agar error aaye aur referral nahi mila to popup dikhao
-      if (!localStorage.getItem("referral")) {
-        setShowReferralPopup(true);
-      }
+  setShowReferralPopup(true);
+  setLoading(false); // ✅ ADD THIS
+}
 
-      toast.error("API Error ❌");
-      setLoading(false);
-    }
+
   };
 
   initTelegram();
@@ -111,9 +109,11 @@ useEffect(() => {
 }, [showReferralPopup]);
 
 const handleReferralSubmit = async () => {
+  // 🔥 Start loading
   setLoading(true);
 
-  if (!inputReferral || !/^CPR[A-Z0-9]{6}$/.test(inputReferral)) {
+  // ✅ Validation
+  if (!/^CPR[A-Z0-9]{6}$/.test(inputReferral)) {
     toast.error("Invalid Referral Code ❌");
     setLoading(false);
     return;
@@ -129,9 +129,10 @@ const handleReferralSubmit = async () => {
       return;
     }
 
+    // ✅ API Call
     const res = await api.post("/user/telegram-login", {
       telegramId: user.id,
-      name: `${user.first_name} ${user.last_name || ""}`.trim(),
+      name: `${user.first_name} ${user.last_name || ""}`,
       username: user.username || "",
       referralCode: inputReferral,
     });
@@ -139,25 +140,31 @@ const handleReferralSubmit = async () => {
     const data = res.data;
 
     if (data.success) {
+      // ✅ Set state
       setApiUser(data.user);
 
+      // ✅ Save to localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("referral", inputReferral);
       localStorage.setItem("userId", data.user.userId || data.user._id);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      // ✅ Close popup
       setShowReferralPopup(false);
-      toast.success("Login Successful ✅");
+
+      toast.success("Login Success ✅");
     } else {
-      toast.error(data.message || "Login failed");
+      toast.error(data.message || "Login failed ❌");
     }
+
   } catch (err) {
     console.error("Referral Submit Error:", err);
     toast.error("Something went wrong ❌");
   } finally {
+    // 🔥 Stop loading (VERY IMPORTANT)
     setLoading(false);
   }
-}
+};
 
   // ✅ Referral Dynamic 
 const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode || "loadingg" }`;
