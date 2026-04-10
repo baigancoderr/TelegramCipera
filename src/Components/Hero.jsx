@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Line } from "react-chartjs-2";
 import api from "../api/axios";
+import DashboardSkeletonPage from "../Layout/Skeleton"
 import {
   Chart as ChartJS,
   LineElement,
@@ -170,11 +171,7 @@ const {
 
   // Loading State
 if (isLoading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center text-white">
-      <p>Loading...</p>
-    </div>
-  );
+  return <DashboardSkeletonPage />;
 }
 
   // Error State

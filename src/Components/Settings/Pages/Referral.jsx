@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Network, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
+import SkeletonPage from "../../../Layout/Skeleton"
 
 const Referral = () => {
   const navigate = useNavigate();
@@ -22,39 +23,34 @@ const Referral = () => {
   const itemsPerPage = 5;
 
   // Fetch Team Tree
-  useEffect(() => {
-    const fetchReferralData = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get("/user/team-tree-view");
+ useEffect(() => {
+  const fetchReferralData = async () => {
+    const start = Date.now();
 
-        if (res.data.status === "success") {
-          const tree = res.data.data.tree || [];
+    try {
+      setLoading(true);
+      const res = await api.get("/user/team-tree-view");
 
-          // Calculate stats
-          const stats = calculateTeamStats(tree);
-          setDirectReferrals(stats.directCount);
-          setTeamSize(stats.totalTeamSize);
+      if (res.data.status === "success") {
+        const tree = res.data.data.tree || [];
 
-          // Flatten tree for table
-          const flattened = flattenTreeForTable(tree);
-          setTableData(flattened);
-        } else {
-          throw new Error(res.data.message || "Failed to fetch data");
-        }
-      } catch (err) {
-        console.error("Referral fetch error:", err);
-        toast.error("Failed to load referral data");
-        setTableData([]);
-        setDirectReferrals(0);
-        setTeamSize(0);
-      } finally {
-        setLoading(false);
+        const stats = calculateTeamStats(tree);
+        setDirectReferrals(stats.directCount);
+        setTeamSize(stats.totalTeamSize);
+
+        const flattened = flattenTreeForTable(tree);
+        setTableData(flattened);
       }
-    };
+    } catch (err) {
+      toast.error("Failed to load referral data");
+    } finally {
+      const delay = 500 - (Date.now() - start);
+      setTimeout(() => setLoading(false), delay > 0 ? delay : 0);
+    }
+  };
 
-    fetchReferralData();
-  }, []);
+  fetchReferralData();
+}, []);
 
   // Calculate Direct Referrals & Total Team Size
   const calculateTeamStats = (treeArray) => {
@@ -168,6 +164,10 @@ const handleShare = () => {
   }
 };
 
+if (loading) {
+  return <SkeletonPage type="referral" />;
+}
+
   return (
     <div className="pb-20 py-3 px-3 text-white font-sans flex justify-center">
       <div className="w-full max-w-md mx-auto relative">
@@ -199,7 +199,7 @@ const handleShare = () => {
               <Users size={20} className="text-emerald-400" />
               <p className="text-xs text-gray-400">Direct Referrals</p>
             </div>
-            <p className="text-xl font-bold">{loading ? "..." : directReferrals}</p>
+        <p className="text-xl font-bold">{directReferrals}</p>
             <p className="text-emerald-400 text-sm mt-1">Active Users</p>
           </div>
 
@@ -211,7 +211,7 @@ const handleShare = () => {
               <Network size={20} className="text-blue-400" />
               <p className="text-xs text-gray-400">Team Size</p>
             </div>
-            <p className="text-xl font-bold">{loading ? "..." : teamSize}</p>
+            <p className="text-xl font-bold">{teamSize}</p>
             <p className="text-blue-400 text-sm mt-1">View Full Tree →</p>
           </div>
         </div>
