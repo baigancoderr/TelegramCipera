@@ -20,7 +20,6 @@ const Profile = () => {
 const [inputReferral, setInputReferral] = useState("");
 
   // ✅ Telegram + API Integration
-// 🔥 Replace your initTelegram useEffect with this improved version
 
 useEffect(() => {
   const initTelegram = async () => {
