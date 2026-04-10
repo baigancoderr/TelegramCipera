@@ -9,6 +9,7 @@ import api from "../../../api/axios";
 const Referral = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [referralLink, setReferralLink] = useState("");
 
   // API States
   const [directReferrals, setDirectReferrals] = useState(0);
@@ -121,6 +122,45 @@ const Referral = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedLevel]);
+
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (user?.referralCode) {
+  const link = `https://t.me/cipera_bot?startapp=${user.referralCode}`;
+  setReferralLink(link);
+}
+
+const handleShare = () => {
+  const text = "Join and earn 🚀";
+  const url = referralLink;
+
+  if (!url) {
+    toast.error("Referral link not ready ❌");
+    return;
+  }
+
+  if (window.Telegram?.WebApp) {
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+      url
+    )}&text=${encodeURIComponent(text)}`;
+
+    window.Telegram.WebApp.openTelegramLink(telegramShareUrl);
+  } else if (navigator.share) {
+    navigator.share({
+      title: "Join Now 🚀",
+      text,
+      url,
+    });
+  } else {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(
+        url
+      )}&text=${encodeURIComponent(text)}`,
+      "_blank"
+    );
+  }
+};
 
   return (
     <div className="pb-20 py-3 px-3 text-white font-sans flex justify-center">
@@ -322,7 +362,7 @@ const Referral = () => {
               <button
                 className="w-full font-semibold text-md py-3 rounded-xl shadow-xl active:scale-95 transition-all text-white"
                 style={{ background: 'linear-gradient(45deg, #587FFF 0%, #09239F 100%)' }}
-                onClick={() => toast.success("Invite link ready! Share now 🚀")}
+                onClick={handleShare}
               >
                 Invite Friends
               </button>
