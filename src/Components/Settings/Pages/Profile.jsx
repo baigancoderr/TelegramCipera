@@ -139,30 +139,26 @@ useEffect(() => {
 
       const data = res.data;
 
-      if (data.success) {
-        setApiUser(data.user);
+   if (data.success) {
+  setApiUser(data.user);
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userId", data.user.userId || data.user._id);
-        localStorage.setItem("user", JSON.stringify(data.user));
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userId", data.user.userId || data.user._id);
+  localStorage.setItem("user", JSON.stringify(data.user));
 
-        console.log("User saved:", data.user);
+  if (referralCode) {
+    localStorage.setItem("referral", referralCode);
+  }
 
-        // ✅ IMPORTANT LOGIC
-        if (data.isNewUser && !referralCode) {
-          setShowReferralPopup(true); // only new user without ref
-        } else {
-          setShowReferralPopup(false);
-        }
-
-        // optional: referral save karna ho to
-        if (referralCode) {
-          localStorage.setItem("referral", referralCode);
-        }
-
-      } else {
-        toast.error(data.message || "Login failed");
-      }
+  setShowReferralPopup(false);
+} 
+// 🔥 UPDATED LOGIC
+else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
+  setShowReferralPopup(true);
+} 
+else {
+  toast.error(data.message || "Login failed");
+}
 
     } catch (error) {
       console.error("Telegram Login Error:", error);
