@@ -10,22 +10,21 @@ import usdc from "../../assets/usdc.png";
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Get data passed from AddFundPage
-  const { 
-    amount, 
-    coin, 
-    walletAddress, 
-    qrData 
+
+  const {
+    amount,
+    coin,
+    network,        // e.g., "Base USDT", "Polygon USDT"
+    walletAddress,
+    qrData,
   } = location.state || {};
 
-  const [time, setTime] = useState(1200); // 20 minutes in seconds
+  const [time, setTime] = useState(1200);
   const [isExpired, setIsExpired] = useState(false);
 
   // Timer
   useEffect(() => {
     if (time <= 0) return;
-
     const timer = setInterval(() => {
       setTime((prev) => {
         if (prev <= 1) {
@@ -35,29 +34,22 @@ const PaymentScreen = () => {
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [time]);
 
-  // Auto redirect when time expires
   useEffect(() => {
     if (isExpired) {
       toast.error("Payment Time Expired ⏳", { duration: 2000 });
-      
-      setTimeout(() => {
-        navigate("/addfund", { replace: true });
-      }, 1500);
+      setTimeout(() => navigate("/addfund", { replace: true }), 1500);
     }
   }, [isExpired, navigate]);
 
-  // Format Time (MM:SS)
   const formatTime = () => {
     const min = Math.floor(time / 60);
     const sec = time % 60;
     return `${min}:${sec < 10 ? "0" : ""}${sec}`;
   };
 
-  // Copy to clipboard
   const handleCopy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -67,14 +59,12 @@ const PaymentScreen = () => {
     }
   };
 
-  // Share (Telegram + Web Share)
-  const handleShare = async (text) => {
-    const shareText = `Pay ${amount} ${coin?.name || "USDT"} to this address:\n${text}`;
-
+  const handleShare = async () => {
+    const shareText = `Pay ${amount} ${coin || "USDT"} to this address:\n${walletAddress}`;
     if (window.Telegram?.WebApp) {
       try {
         window.Telegram.WebApp.openTelegramLink(
-          `https://t.me/share/url?url=${encodeURIComponent(text)}&text=${encodeURIComponent(shareText)}`
+          `https://t.me/share/url?url=${encodeURIComponent(walletAddress)}&text=${encodeURIComponent(shareText)}`
         );
         toast.success("Shared Successfully 🚀");
       } catch {
@@ -82,35 +72,33 @@ const PaymentScreen = () => {
       }
     } else if (navigator.share) {
       try {
-        await navigator.share({
-          title: "Payment Details",
-          text: shareText,
-        });
+        await navigator.share({ title: "Payment Details", text: shareText });
         toast.success("Shared Successfully 🚀");
       } catch {
         toast.error("Share cancelled");
       }
     } else {
-      toast.error("Sharing not supported on this device");
+      toast.error("Sharing not supported");
     }
   };
 
-  const handleCancel = () => {
-    toast.error("Payment Cancelled ❌");
-    setTimeout(() => {
-      navigate("/addfund", { replace: true });
-    }, 800);
+  // Get network-specific icon
+  const getNetworkIcon = () => {
+    const net = network?.toLowerCase() || "";
+    if (net.includes("base")) {
+      return "https://cryptologos.cc/logos/base-logo.png";           // Base network icon
+    }
+    if (net.includes("polygon")) {
+      return "https://cryptologos.cc/logos/polygon-matic-logo.png";  // Polygon icon
+    }
+    if (net.includes("bep20") || net.includes("binance")) {
+      return "https://cryptologos.cc/logos/binance-coin-bnb-logo.png"; // BSC / BEP20
+    }
+    // Default for Web20 / Ethereum-style
+    return "https://cryptologos.cc/logos/ethereum-eth-logo.png";
   };
 
-  const handleComplete = () => {
-    toast.success("Payment Submitted ✅\nWaiting for confirmation...");
-    setTimeout(() => {
-      navigate("/addfund", { replace: true });
-    }, 1200);
-  };
-
-  // Safety check
-  if (!amount || !walletAddress) {
+  if (!amount || !walletAddress || !network) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
         <p className="text-red-400">Invalid payment data. Please try again.</p>
@@ -144,17 +132,38 @@ const PaymentScreen = () => {
             </div>
           </div>
 
-          {/* QR CODE */}
+          {/* QR CODE WITH BLOCKCHAIN NETWORK ICON IN CENTER */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden text-center">
-            <div className="bg-[#00000033] p-5 backdrop-blur-[20px]">
-              <div className="bg-white p-3 rounded-xl inline-block">
+            <div className="bg-[#00000033] p-6 backdrop-blur-[20px]">
+              <div className="relative bg-white p-4 rounded-2xl inline-block mx-auto">
+                
+                {/* QR Code */}
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData || walletAddress)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                    qrData || walletAddress
+                  )}`}
                   alt="QR Code"
-                  className="w-44 h-44"
+                  className="w-[220px] h-[220px]"
                 />
+
+                {/* Blockchain Network Icon in Center */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full shadow-xl border border-gray-200">
+                  <img
+                    src={getNetworkIcon()}
+                    alt="Network"
+                    className="w-14 h-14 object-contain"
+                    onError={(e) => {
+                      e.target.src = usdt; // fallback
+                    }}
+                  />
+                </div>
               </div>
-              <p className="text-sm text-gray-400 mt-3">Scan QR Code to Pay</p>
+
+              {/* Scan to Pay + Network Name */}
+              <p className="text-sm text-gray-400 mt-4">Scan to Pay</p>
+              <p className="text-base font-semibold text-white mt-1 tracking-wide">
+                {network}
+              </p>
             </div>
           </div>
 
@@ -162,7 +171,6 @@ const PaymentScreen = () => {
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
             <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
               <p className="text-sm text-gray-300 mb-2">Wallet Address</p>
-
               <div className="bg-black border border-[#81ECFF] rounded-lg p-3 text-xs mb-4 break-all font-mono">
                 {walletAddress}
               </div>
@@ -177,7 +185,7 @@ const PaymentScreen = () => {
                 </button>
 
                 <button
-                  onClick={() => handleShare(walletAddress)}
+                  onClick={handleShare}
                   className="flex-1 bg-[linear-gradient(45deg,#587FFF,#09239F)] hover:brightness-110 text-white text-sm py-3 rounded-full flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Share2 size={16} />
@@ -187,44 +195,7 @@ const PaymentScreen = () => {
             </div>
           </div>
 
-          
-
-          {/* <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
-            <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
-              <p className="text-xs text-gray-400 mb-1">Amount to Pay</p>
-              <h2 className="text-2xl font-bold text-white">
-                {amount} {coin?.name || "USDT"}
-              </h2>
-              <p className="text-xs text-blue-400 mt-2">
-                Binance Smart Chain (BEP20) • TRC20
-              </p>
-              <p className="text-[10px] text-gray-500 mt-1">
-                Send exact amount only • Single transaction
-              </p>
-            </div>
-          </div>
-
-          
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleCancel}
-              className="w-full py-3.5 rounded-xl border border-red-500/40 bg-red-500/10 text-red-400 font-medium hover:bg-red-500/20 transition active:scale-95"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleComplete}
-              className="w-full py-3.5 rounded-xl font-semibold text-white
-                bg-gradient-to-r from-[#587FFF] to-[#09239F]
-                shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition active:scale-95"
-            >
-              I Have Completed Payment
-            </button>
-          </div> */}
-
-        
-          <p className="text-center text-[10px] text-gray-500 pt-2">
+          <p className="text-center text-[10px] text-gray-500 pt-4">
             Funds will be credited automatically after network confirmation
           </p>
 
