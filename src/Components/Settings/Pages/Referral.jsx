@@ -1,56 +1,44 @@
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useMemo } from "react";
 import btmimg from "../../../assets/btmimg.png";
 import { ArrowLeft, Users, Network, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
 import SkeletonPage from "../../../Layout/Skeleton"
+import { useQuery } from "@tanstack/react-query";
+
 
 const Referral = () => {
+
+  const { data: tree = [], isLoading, isError } = useQuery({
+  queryKey: ["referralTree"],
+  queryFn: async () => {
+    const res = await api.get("/user/team-tree-view");
+
+    if (res.data.status !== "success") {
+      throw new Error("Failed to fetch");
+    }
+
+    return res.data.data.tree || [];
+  },
+});
+
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [referralLink, setReferralLink] = useState("");
 
   // API States
-  const [directReferrals, setDirectReferrals] = useState(0);
-  const [teamSize, setTeamSize] = useState(0);
-  const [tableData, setTableData] = useState([]);
+  // const [directReferrals, setDirectReferrals] = useState(0);
+  // const [teamSize, setTeamSize] = useState(0);
+  // const [tableData, setTableData] = useState([]);
 
   // Filter & Pagination States
   const [selectedLevel, setSelectedLevel] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch Team Tree
- useEffect(() => {
-  const fetchReferralData = async () => {
-    const start = Date.now();
 
-    try {
-      setLoading(true);
-      const res = await api.get("/user/team-tree-view");
-
-      if (res.data.status === "success") {
-        const tree = res.data.data.tree || [];
-
-        const stats = calculateTeamStats(tree);
-        setDirectReferrals(stats.directCount);
-        setTeamSize(stats.totalTeamSize);
-
-        const flattened = flattenTreeForTable(tree);
-        setTableData(flattened);
-      }
-    } catch (err) {
-      toast.error("Failed to load referral data");
-    } finally {
-      const delay = 500 - (Date.now() - start);
-      setTimeout(() => setLoading(false), delay > 0 ? delay : 0);
-    }
-  };
-
-  fetchReferralData();
-}, []);
 
   // Calculate Direct Referrals & Total Team Size
   const calculateTeamStats = (treeArray) => {
@@ -97,6 +85,18 @@ const Referral = () => {
     traverse(treeArray);
     return result;
   };
+
+    // Fetch Team Tree
+const { directReferrals, teamSize, tableData } = useMemo(() => {
+  const stats = calculateTeamStats(tree);
+  const flattened = flattenTreeForTable(tree);
+
+  return {
+    directReferrals: stats.directCount,
+    teamSize: stats.totalTeamSize,
+    tableData: flattened,
+  };
+}, [tree]);
 
   // Filter data based on selected level
   const filteredData = selectedLevel === "All"
@@ -164,8 +164,12 @@ const handleShare = () => {
   }
 };
 
-if (loading) {
+if (isLoading) {
   return <SkeletonPage type="referral" />;
+}
+
+if (isError) {
+  return <p className="text-center text-red-400">Failed to load data</p>;
 }
 
   return (
@@ -228,7 +232,7 @@ if (loading) {
                 onChange={(e) => setSelectedLevel(e.target.value)}
                 className="bg-[#0B0F1A] border border-[#444385] text-white text-sm rounded-lg px-4 py-2 
                            focus:outline-none focus:border-[#81ECFF] cursor-pointer appearance-none pr-8"
-                disabled={loading}
+                disabled={isLoading}
               >
                 <option value="All">All Levels</option>
                 <option value="1">Level 1</option>
@@ -245,74 +249,84 @@ if (loading) {
           </div>
 
           {/* Table */}
-          <div className="rounded-lg border border-[#81ECFF66] p-[1px] bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
-            <div className="rounded-lg bg-[#0B0F1A] backdrop-blur-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-[600px] w-full text-sm">
-                  <thead className="bg-[linear-gradient(90deg,_rgba(88,127,255,0.1),_transparent)] uppercase">
-                    <tr className="text-white border-b border-[#1f2430]">
-                      <th className="px-4 py-3 text-left">S.No</th>
-                      <th className="px-4 py-3 text-left">ID</th>
-                      <th className="px-4 py-3 text-left">Name</th>
-                      <th className="px-4 py-3 text-left">Level</th>
-                      <th className="px-4 py-3 text-center">Investment</th>
-                      <th className="px-4 py-3 text-right">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-10 text-gray-400">
-                          Loading...
-                        </td>
-                      </tr>
-                    ) : currentData.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-10 text-gray-400">
-                          No referrals found for selected level
-                        </td>
-                      </tr>
-                    ) : (
-                      currentData.map((item, i) => (
-                        <tr
-                          key={i}
-                          className="border-b border-[#1f2430] hover:bg-[linear-gradient(90deg,_rgba(88,127,255,0.1),_transparent)]"
-                        >
-                          <td className="px-4 py-3 text-blue-400 font-medium">
-                            {indexOfFirst + i + 1}
-                          </td>
-                          <td className="px-4 py-3">{item.id}</td>
-                          <td
-                            className="px-4 py-3 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]"
-                            title={item.name}
-                          >
-                            {item.name}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`text-xs px-3 py-1 rounded-full ${
-                                item.level === 1
-                                  ? "bg-blue-500/20 text-blue-300"
-                                  : "bg-green-500/20 text-green-300"
-                              }`}
-                            >
-                              {item.level}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center font-bold text-[#81ECFF]">
-                            {item.selfInvestment}
-                          </td>
-                          <td className="px-4 py-3 text-right text-xs text-gray-400">
-                            {item.date}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+         <div className="rounded-lg border border-[#81ECFF66] p-[1px] bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
+  <div className="rounded-lg bg-[#0B0F1A] backdrop-blur-xl overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="min-w-[600px] w-full text-sm">
+        <thead className="bg-[linear-gradient(90deg,_rgba(88,127,255,0.1),_transparent)] uppercase">
+          <tr className="text-white border-b border-[#1f2430]">
+            <th className="px-4 py-3 text-left">S.No</th>
+            <th className="px-4 py-3 text-left">ID</th>
+            <th className="px-4 py-3 text-left">Name</th>
+            <th className="px-4 py-3 text-left">Level</th>
+            <th className="px-4 py-3 text-center">Investment</th>
+            <th className="px-4 py-3 text-right">Date</th>
+          </tr>
+        </thead>
+
+       <tbody>
+  {currentData.length === 0 ? (
+    <tr>
+      <td colSpan="6" className="text-center py-10 text-gray-400">
+        No referrals found for selected level
+      </td>
+    </tr>
+  ) : (
+    currentData.map((item, i) => (
+      <tr
+        key={item.id || i}
+        className="border-b border-[#1f2430] hover:bg-[linear-gradient(90deg,_rgba(88,127,255,0.1),_transparent)]"
+      >
+        {/* S.No */}
+        <td className="px-4 py-3 text-blue-400 font-medium">
+          {indexOfFirst + i + 1}
+        </td>
+
+        {/* ID */}
+        <td className="px-4 py-3">
+          {item.id}
+        </td>
+
+        {/* Name */}
+        <td
+          className="px-4 py-3 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]"
+          title={item.name}
+        >
+          {item.name}
+        </td>
+
+        {/* Level */}
+        <td className="px-4 py-3">
+          <span
+            className={`text-xs px-3 py-1 rounded-full ${
+              item.level === 1
+                ? "bg-blue-500/20 text-blue-300"
+                : "bg-green-500/20 text-green-300"
+            }`}
+          >
+            Level {item.level}
+          </span>
+        </td>
+
+        {/* Investment */}
+        <td className="px-4 py-3 text-center font-bold text-[#81ECFF]">
+          {item.selfInvestment}
+        </td>
+
+        {/* Date */}
+        <td className="px-4 py-3 text-right text-xs text-gray-400">
+          {item.date}
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
+
+      </table>
+    </div>
+  </div>
+</div>
 
           {/* Pagination */}
           {totalPages > 1 && (
