@@ -304,7 +304,7 @@ if (isError) {
                 : "bg-green-500/20 text-green-300"
             }`}
           >
-            Level {item.level}
+             {item.level}
           </span>
         </td>
 
