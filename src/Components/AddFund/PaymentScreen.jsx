@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Copy, Share2, Clock ,ArrowLeft  } from "lucide-react";
+import { Copy, Share2, Clock ,ArrowLeft ,User  } from "lucide-react";
 import { useState, useEffect } from "react";
 import Footer from "../Footer";
 import bgImg from "../../assets/bgImg.png";
