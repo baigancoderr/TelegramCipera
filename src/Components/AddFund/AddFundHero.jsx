@@ -22,44 +22,14 @@ const AddFundPage = () => {
   const buttonRef = useRef(null);
 
   // ✅ Only your 5 required networks
- // ✅ Updated networks array with network icons
-const networks = [
-  { 
-    label: "Web20 USDT",     
-    value: "WEB20_USDT",   
-    coinIcon: usdt, 
-    coin: "USDT",
-    networkIcon: "https://cryptologos.cc/logos/ethereum-eth-logo.png"   // Ethereum style for Web20
-  },
-  { 
-    label: "Base USDT",      
-    value: "BASE_USDT",    
-    coinIcon: usdt, 
-    coin: "USDT",
-    networkIcon: "https://cryptologos.cc/logos/base-logo.png"           // Base network
-  },
-  { 
-    label: "Base USDC",      
-    value: "BASE_USDC",    
-    coinIcon: usdc, 
-    coin: "USDC",
-    networkIcon: "https://cryptologos.cc/logos/base-logo.png"           // Base network
-  },
-  { 
-    label: "Polygon USDT",   
-    value: "POLYGON_USDT", 
-    coinIcon: usdt, 
-    coin: "USDT",
-    networkIcon: "https://cryptologos.cc/logos/polygon-matic-logo.png"  // Polygon
-  },
-  { 
-    label: "BEP20 USDT",     
-    value: "BEP20_USDT",   
-    coinIcon: usdt, 
-    coin: "USDT",
-    networkIcon: "https://cryptologos.cc/logos/binance-coin-bnb-logo.png" // BSC / BEP20
-  }
-];
+  const networks = [
+    { label: "Web20 USDT",     value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
+    { label: "Base USDT",      value: "BASE_USDT",    icon: usdt, coin: "USDT" },
+    { label: "Base USDC",      value: "BASE_USDC",    icon: usdc, coin: "USDC" },
+    // { label: "ETH USDT",       value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
+    { label: "Polygon USDT",   value: "POLYGON_USDT", icon: usdt, coin: "USDT" },
+    { label: "BEP20 USDT",     value: "BEP20_USDT",   icon: usdt, coin: "USDT" }
+  ];
 
   const [selectedNetwork, setSelectedNetwork] = useState("WEB20_USDT");
 
@@ -174,19 +144,18 @@ const networks = [
     const data = res.data;
 
     if (data.success && data.data?.address_in) {
-      toast.success("Payment address generated✅");
+      toast.success("Payment address generated successfully ✅");
 
- navigate("/payment", {
-  state: {
-    amount,
-    coin: selected.coin,
-    network: selected.label,
-    networkIcon: selected.networkIcon,     // ← ADD THIS LINE
-    walletAddress: data.data.address_in,
-    qrData: data.data.address_in,
-    callbackInfo: data.data,
-  },
-});
+      navigate("/payment", {
+        state: {
+          amount,
+          coin: selected.coin,
+          network: selected.label,
+          walletAddress: data.data.address_in,
+          qrData: data.data.address_in,
+          callbackInfo: data.data,
+        },
+      });
     } else {
       const errorMsg = data.message || data.error || "Failed to generate address";
       console.warn("API returned failure:", data);
@@ -268,11 +237,11 @@ const networks = [
                 className="flex items-center gap-2 cursor-pointer ml-3 shrink-0"
               >
                 <div className="flex items-center gap-2">
-                 <img
-  src={networks.find(n => n.value === selectedNetwork)?.coinIcon}   // Changed from .icon
-  alt="coin"
-  className="w-4 h-4"
-/>
+                  <img
+                    src={networks.find(n => n.value === selectedNetwork)?.icon}
+                    alt="coin"
+                    className="w-4 h-4"
+                  />
                   <span className="text-sm whitespace-nowrap">
                     {networks.find(n => n.value === selectedNetwork)?.label}
                   </span>
@@ -382,11 +351,11 @@ const networks = [
                 className="px-4 py-3.5 cursor-pointer text-sm hover:bg-[#444385]/70 
                            transition-colors flex items-center gap-3 active:bg-[#444385]"
               >
-              <img 
-  src={net.coinIcon}        // Changed from net.icon
-  alt="coin" 
-  className="w-5 h-5" 
-/>
+                <img 
+                  src={net.icon} 
+                  alt="coin" 
+                  className="w-5 h-5" 
+                />
                 <span>{net.label}</span>
               </div>
             ))}

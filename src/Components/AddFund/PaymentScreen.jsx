@@ -5,22 +5,21 @@ import Footer from "../Footer";
 import bgImg from "../../assets/bgImg.png";
 import toast from "react-hot-toast";
 import usdt from "../../assets/usdt.png";
+import usdc from "../../assets/usdc.png";
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Receive data from AddFundPage
-  const {
-    amount,
-    coin,
-    network,        // e.g. "Base USDT"
-    networkIcon,    // Blockchain network icon URL
-    walletAddress,
-    qrData,
+  
+  // Get data passed from AddFundPage
+  const { 
+    amount, 
+    coin, 
+    walletAddress, 
+    qrData 
   } = location.state || {};
 
-  const [time, setTime] = useState(1200); // 20 minutes
+  const [time, setTime] = useState(1200); // 20 minutes in seconds
   const [isExpired, setIsExpired] = useState(false);
 
   // Timer
@@ -40,22 +39,25 @@ const PaymentScreen = () => {
     return () => clearInterval(timer);
   }, [time]);
 
-  // Auto redirect on expiry
+  // Auto redirect when time expires
   useEffect(() => {
     if (isExpired) {
       toast.error("Payment Time Expired ⏳", { duration: 2000 });
+      
       setTimeout(() => {
         navigate("/addfund", { replace: true });
       }, 1500);
     }
   }, [isExpired, navigate]);
 
+  // Format Time (MM:SS)
   const formatTime = () => {
     const min = Math.floor(time / 60);
     const sec = time % 60;
     return `${min}:${sec < 10 ? "0" : ""}${sec}`;
   };
 
+  // Copy to clipboard
   const handleCopy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -65,13 +67,14 @@ const PaymentScreen = () => {
     }
   };
 
-  const handleShare = async () => {
-    const shareText = `Pay ${amount} ${coin || "USDT"} to this address:\n${walletAddress}`;
+  // Share (Telegram + Web Share)
+  const handleShare = async (text) => {
+    const shareText = `Pay ${amount} ${coin?.name || "USDT"} to this address:\n${text}`;
 
     if (window.Telegram?.WebApp) {
       try {
         window.Telegram.WebApp.openTelegramLink(
-          `https://t.me/share/url?url=${encodeURIComponent(walletAddress)}&text=${encodeURIComponent(shareText)}`
+          `https://t.me/share/url?url=${encodeURIComponent(text)}&text=${encodeURIComponent(shareText)}`
         );
         toast.success("Shared Successfully 🚀");
       } catch {
@@ -79,18 +82,35 @@ const PaymentScreen = () => {
       }
     } else if (navigator.share) {
       try {
-        await navigator.share({ title: "Payment Details", text: shareText });
+        await navigator.share({
+          title: "Payment Details",
+          text: shareText,
+        });
         toast.success("Shared Successfully 🚀");
       } catch {
         toast.error("Share cancelled");
       }
     } else {
-      toast.error("Sharing not supported");
+      toast.error("Sharing not supported on this device");
     }
   };
 
+  const handleCancel = () => {
+    toast.error("Payment Cancelled ❌");
+    setTimeout(() => {
+      navigate("/addfund", { replace: true });
+    }, 800);
+  };
+
+  const handleComplete = () => {
+    toast.success("Payment Submitted ✅\nWaiting for confirmation...");
+    setTimeout(() => {
+      navigate("/addfund", { replace: true });
+    }, 1200);
+  };
+
   // Safety check
-  if (!amount || !walletAddress || !network) {
+  if (!amount || !walletAddress) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
         <p className="text-red-400">Invalid payment data. Please try again.</p>
@@ -108,8 +128,30 @@ const PaymentScreen = () => {
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="min-h-screen text-white px-3 py-4">
-        <div className="max-w-md mx-auto space-y-5">
+      <div className="min-h-screen  text-white px-3 py-4">
+        <div className="max-w-md mx-auto ">
+
+   {/* Header */}
+          <div className="flex justify-between items-center mb-5">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/settings")}
+              className="p-2 rounded-lg bg-[#00000033] border border-[#444385]"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <h1 className="text-lg font-semibold">Add Fund</h1>
+          </div>
+
+          <div
+            onClick={() => navigate("/settings")}
+            className="w-10 h-10 flex items-center justify-center rounded-xl 
+              bg-gradient-to-r from-[#587FFF] to-[#09239F] 
+              shadow-lg shadow-blue-500/20 cursor-pointer active:scale-95 transition"
+          >
+            <User size={18} />
+          </div>
+        </div>
 
           {/* TIMER */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden">
@@ -124,39 +166,17 @@ const PaymentScreen = () => {
             </div>
           </div>
 
-          {/* QR CODE WITH BLOCKCHAIN NETWORK ICON */}
+          {/* QR CODE */}
           <div className="rounded-2xl border-2 border-[#444385] overflow-hidden text-center">
-            <div className="bg-[#00000033] p-6 backdrop-blur-[20px]">
-              <div className="relative bg-white p-4 rounded-2xl inline-block mx-auto">
-                
-                {/* QR Code */}
+            <div className="bg-[#00000033] p-5 backdrop-blur-[20px]">
+              <div className="bg-white p-3 rounded-xl inline-block">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                    qrData || walletAddress
-                  )}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData || walletAddress)}`}
                   alt="QR Code"
-                  className="w-[220px] h-[220px]"
+                  className="w-44 h-44"
                 />
-
-                {/* Blockchain Network Icon in the Center of QR */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                               bg-white p-3 rounded-full shadow-2xl border-2 border-gray-100">
-                  <img
-                    src={networkIcon}
-                    alt={network}
-                    className="w-16 h-16 object-contain"
-                    onError={(e) => {
-                      e.target.src = usdt; // Fallback to USDT icon
-                    }}
-                  />
-                </div>
               </div>
-
-              {/* Scan to Pay + Selected Network Name */}
-              <p className="text-sm text-gray-400 mt-4">Scan to Pay</p>
-              <p className="text-base font-semibold text-white mt-1 tracking-wide">
-                {network}
-              </p>
+              <p className="text-sm text-gray-400 mt-3">Scan QR Code to Pay</p>
             </div>
           </div>
 
@@ -179,7 +199,7 @@ const PaymentScreen = () => {
                 </button>
 
                 <button
-                  onClick={handleShare}
+                  onClick={() => handleShare(walletAddress)}
                   className="flex-1 bg-[linear-gradient(45deg,#587FFF,#09239F)] hover:brightness-110 text-white text-sm py-3 rounded-full flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Share2 size={16} />
@@ -189,7 +209,14 @@ const PaymentScreen = () => {
             </div>
           </div>
 
-          <p className="text-center text-[10px] text-gray-500 pt-4">
+          
+
+        
+          
+        
+
+          m
+          <p className="text-center text-[10px] text-gray-500 pt-2">
             Funds will be credited automatically after network confirmation
           </p>
 
