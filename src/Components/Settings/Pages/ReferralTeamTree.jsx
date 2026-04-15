@@ -9,8 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 const ReferralTeamTree = () => {
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [searchTerm, setSearchTerm] = useState("");
-  // const [treeData, setTreeData] = useState([]);
-  // const [loading, setLoading] = useState(true);
+
   const treeContainer = useRef(null);
 
   // Fetch Actual Team Tree from API
@@ -29,8 +28,8 @@ const ReferralTeamTree = () => {
 
     return res.data.data.tree || [];
   },
-  staleTime: 5 * 60 * 1000, // 5 min tak fresh (no refetch)
-  cacheTime: 10 * 60 * 1000, // 10 min tak cache
+  staleTime: 5 * 60 * 1000, // 5 min  fresh 
+  cacheTime: 10 * 60 * 1000, // 10 min 
 });
 
 
@@ -53,22 +52,7 @@ const treeData = useMemo(() => {
   return treeDataRaw.map(transformNode);
 }, [treeDataRaw]);
 
-  // Transform API data to react-d3-tree format
-  // const transformTreeForD3 = (apiNodes) => {
-  //   if (!apiNodes || apiNodes.length === 0) return [];
-
-  //   const transformNode = (node) => ({
-  //     name: node.name || node.username || "Unknown",
-  //     attributes: {
-  //       Name: (node.name || node.username || "Unknown User").trim(),
-  //       UserId: node.userId || node.referralCode || "N/A",
-  //       SelfInvestment: node.selfInvestment || 0,
-  //     },
-  //     children: node.children ? node.children.map(transformNode) : [],
-  //   });
-
-  //   return apiNodes.map(transformNode);
-  // };
+  
 
   // Search Filter
   const filteredTreeData = useMemo(() => {
@@ -107,9 +91,15 @@ const treeData = useMemo(() => {
     }
   }, [loading, treeData]);
 
-    useEffect(() => {
+//     useEffect(() => {
+//   if (isError) {
+//     toast.error("Failed to load team tree");
+//   }
+// }, [isError]);
+
+   useEffect(() => {
   if (isError) {
-    toast.error("Failed to load team tree");
+    console.error("Error fetching team tree:", isError);
   }
 }, [isError]);
 
