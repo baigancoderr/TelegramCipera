@@ -1,84 +1,64 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, User, Copy, Share2 } from "lucide-react";
 import userimg2 from "../../../assets/setting/user-img.jpeg";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
 import SkeletonPage from "../../../Layout/Skeleton";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+// ─── /me fetcher (outside component, no stale closure issues) ───────────────
+const fetchMe = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("NO_TOKEN");
+
+  const res = await api.get("/user/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.data.success) throw new Error("FETCH_FAILED");
+
+  // ✅ Keep localStorage in sync
+  localStorage.setItem("user", JSON.stringify(res.data.user));
+  return res.data.user;
+};
 
 const Profile = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [tgUser, setTgUser] = useState(null);
-  const [apiUser, setApiUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);   // only for Telegram init
   const [saving, setSaving] = useState(false);
-
   const [walletAddress, setWalletAddress] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(true);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
   const [inputReferral, setInputReferral] = useState("");
 
-  // ✅ Centralized /me fetcher
-  const fetchMe = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const res = await api.get("/user/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.data.success) {
-        const user = res.data.user;
-        setApiUser(user);
-        localStorage.setItem("user", JSON.stringify(user));
+  // ─── TanStack Query: /me ────────────────────────────────────────────────
+  const {
+    data: apiUser,
+    isLoading: meLoading,
+    error: meError,
+  } = useQuery({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+    enabled: !!localStorage.getItem("token"), // don't run until token exists
+    retry: (failureCount, error) => {
+      // ❌ DB reset / token invalid → don't retry, just clear everything
+      if (error?.response?.status === 401 || error?.message === "NO_TOKEN") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userId");
+        queryClient.removeQueries({ queryKey: ["me"] }); // nuke cache
+        return false;
       }
-    } catch (err) {
-      console.error("fetchMe Error:", err);
-    }
-  }, []);
+      return failureCount < 1;
+    },
+  });
 
-  // ✅ Wallet save/update
-  const handleSave = async () => {
-    if (!walletAddress.trim()) {
-      toast.error("Enter wallet address ❌");
-      return;
-    }
-    if (saving) return;
-
-    try {
-      setSaving(true);
-      const token = localStorage.getItem("token");
-
-      const res = !apiUser?.walletAddress
-        ? await api.post("/user/add-wallet", { walletAddress }, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        : await api.put("/user/update-wallet", { walletAddress }, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-      if (res.data.success) {
-        toast.success(res.data.message || "Success ✅");
-        await fetchMe(); // 🔥 refresh from /me instead of manually setting
-        setIsSaved(true);
-        setIsEditing(false);
-      } else {
-        toast.error(res.data.message || "Failed ❌");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || "API Error ❌");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUpdate = () => setIsEditing(true);
-
-  // ✅ Sync wallet field whenever apiUser changes
+  // ─── Sync wallet field when apiUser arrives from cache or network ────────
   useEffect(() => {
     if (apiUser?.walletAddress) {
       setWalletAddress(apiUser.walletAddress);
@@ -87,7 +67,7 @@ const Profile = () => {
     }
   }, [apiUser]);
 
-  // ✅ Telegram login → then fetchMe for fresh data
+  // ─── Telegram init → login → then invalidate ["me"] to trigger fresh fetch
   useEffect(() => {
     const initTelegram = async () => {
       try {
@@ -114,15 +94,15 @@ const Profile = () => {
         const data = res.data;
 
         if (data.success) {
-          // 1️⃣ Save token
           localStorage.setItem("token", data.token);
           localStorage.setItem("userId", data.user.userId || data.user._id);
           if (referralCode) localStorage.setItem("referral", referralCode);
 
           setShowReferralPopup(false);
 
-          // 2️⃣ Fetch fresh user data from /me
-          await fetchMe();
+          // 🔥 Invalidate cache → useQuery refetches /me automatically
+          await queryClient.invalidateQueries({ queryKey: ["me"] });
+
         } else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
           setShowReferralPopup(true);
         } else {
@@ -137,13 +117,13 @@ const Profile = () => {
     };
 
     initTelegram();
-  }, [fetchMe]);
+  }, [queryClient]);
 
   useEffect(() => {
     document.body.style.overflow = showReferralPopup ? "hidden" : "auto";
   }, [showReferralPopup]);
 
-  // ✅ Referral submit → then fetchMe
+  // ─── Referral submit ─────────────────────────────────────────────────────
   const handleReferralSubmit = async () => {
     if (!/^CPR[A-Z0-9]{6}$/.test(inputReferral)) {
       toast.error("Invalid Referral Code ❌");
@@ -151,7 +131,6 @@ const Profile = () => {
     }
 
     setLoading(true);
-
     try {
       const tg = window.Telegram?.WebApp;
       const user = tg?.initDataUnsafe?.user;
@@ -174,8 +153,8 @@ const Profile = () => {
         setShowReferralPopup(false);
         toast.success("Login Success ✅");
 
-        // 🔥 fetch fresh data via /me
-        await fetchMe();
+        // 🔥 Same pattern — invalidate, let useQuery do the rest
+        await queryClient.invalidateQueries({ queryKey: ["me"] });
       } else {
         toast.error(data.message || "Login failed ❌");
       }
@@ -187,6 +166,45 @@ const Profile = () => {
     }
   };
 
+  // ─── Wallet save/update ──────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!walletAddress.trim()) { toast.error("Enter wallet address ❌"); return; }
+    if (saving) return;
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem("token");
+
+      const res = !apiUser?.walletAddress
+        ? await api.post("/user/add-wallet", { walletAddress }, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        : await api.put("/user/update-wallet", { walletAddress }, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Success ✅");
+
+        // 🔥 Invalidate → useQuery refetches, wallet field syncs via useEffect
+        await queryClient.invalidateQueries({ queryKey: ["me"] });
+
+        setIsSaved(true);
+        setIsEditing(false);
+      } else {
+        toast.error(res.data.message || "Failed ❌");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "API Error ❌");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdate = () => setIsEditing(true);
+
+  // ─── Referral link ───────────────────────────────────────────────────────
   const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode || "loading"}`;
 
   const handleShare = () => {
@@ -198,7 +216,10 @@ const Profile = () => {
     } else if (navigator.share) {
       navigator.share({ title: "Join Now 🚀", text, url: referralLink });
     } else {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`, "_blank");
+      window.open(
+        `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`,
+        "_blank"
+      );
     }
   };
 
@@ -211,7 +232,9 @@ const Profile = () => {
     }
   };
 
-  if (loading) return <SkeletonPage type="profile" />;
+  // ─── Loading gate ────────────────────────────────────────────────────────
+  // Show skeleton during Telegram init OR first /me fetch
+  if (loading || meLoading) return <SkeletonPage type="profile" />;
 
   return (
     <div className="min-h-screen flex justify-center pb-24 px-2 py-3 text-white">
@@ -253,7 +276,6 @@ const Profile = () => {
                 </p>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#00000020] p-3 rounded-xl border border-[#444B55]">
                 <p className="text-xs text-gray-400">USER ID</p>
@@ -337,7 +359,7 @@ const Profile = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Processing...
                 </>
               ) : "Continue"}
