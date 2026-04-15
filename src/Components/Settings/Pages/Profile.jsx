@@ -35,7 +35,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(true);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
   const [inputReferral, setInputReferral] = useState("");
-  const showSkeleton = loading || (!apiUser && meLoading);
+
 
   // ─── TanStack Query: /me ────────────────────────────────────────────────
   const {
@@ -59,6 +59,9 @@ const Profile = () => {
       return failureCount < 1;
     },
   });
+
+
+  const showSkeleton = loading || (!apiUser && meLoading);
 
   // ─── Sync wallet field when apiUser arrives from cache or network ────────
   useEffect(() => {
