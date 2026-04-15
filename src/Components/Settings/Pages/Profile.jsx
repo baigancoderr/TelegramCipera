@@ -84,8 +84,15 @@ const handleUpdate = () => {
   setIsEditing(true);
 };
 
+useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    setApiUser(JSON.parse(storedUser));
+  }
+}, []);
 
 useEffect(() => {
+  
   if (apiUser?.walletAddress) {
     setWalletAddress(apiUser.walletAddress);
     setIsSaved(true);
@@ -120,6 +127,7 @@ const getTelegramUser = () => {
 };
 
 const tgPayload = useMemo(() => getTelegramUser(), []);
+const token = localStorage.getItem("token");
 
 const {
   data,
@@ -131,7 +139,9 @@ const {
     const res = await api.post("/user/telegram-login", tgPayload);
     return res.data;
   },
- enabled: !!tgPayload,
+
+
+enabled: !!tgPayload && !token,
   staleTime: 10 * 60 * 1000, // 10 min 
   cacheTime: 30 * 60 * 1000, // 30 min 
   retry: 1,
@@ -141,6 +151,8 @@ const {
 useEffect(() => {
   if (!data) return;
 
+  const existingUser = localStorage.getItem("user");
+
   if (data.success) {
     setApiUser(data.user);
 
@@ -148,19 +160,16 @@ useEffect(() => {
     localStorage.setItem("userId", data.user.userId || data.user._id);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    if (tgPayload?.referralCode) {
-      localStorage.setItem("referral", tgPayload.referralCode);
-    }
-
     setShowReferralPopup(false);
   } 
-  else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
+  else if (!existingUser && data.isNewUser) {
+    // ✅ ONLY new user → popup
     setShowReferralPopup(true);
   } 
   else {
     toast.error(data.message || "Login failed");
   }
-}, [data ,tgPayload]);
+}, [data]);
 
 useEffect(() => {
   const tg = window.Telegram?.WebApp;
@@ -171,6 +180,13 @@ useEffect(() => {
   }
 }, []);
 
+
+useEffect(() => {
+  const existingUser = localStorage.getItem("user");
+  if (existingUser) {
+    setShowReferralPopup(false);
+  }
+}, []);
 
 
 useEffect(() => {
