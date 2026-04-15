@@ -35,15 +35,17 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(true);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
   const [inputReferral, setInputReferral] = useState("");
+  const showSkeleton = loading || (!apiUser && meLoading);
 
   // ─── TanStack Query: /me ────────────────────────────────────────────────
   const {
     data: apiUser,
     isLoading: meLoading,
-    error: meError,
+    isFetching,
   } = useQuery({
     queryKey: ["me"],
     queryFn: fetchMe,
+     refetchOnWindowFocus: false, 
     enabled: !!localStorage.getItem("token"), // don't run until token exists
     retry: (failureCount, error) => {
       // ❌ DB reset / token invalid → don't retry, just clear everything
@@ -234,7 +236,9 @@ const Profile = () => {
 
   // ─── Loading gate ────────────────────────────────────────────────────────
   // Show skeleton during Telegram init OR first /me fetch
-  if (loading || meLoading) return <SkeletonPage type="profile" />;
+if (showSkeleton) {
+  return <SkeletonPage type="profile" />;
+}
 
   return (
     <div className="min-h-screen flex justify-center pb-24 px-2 py-3 text-white">
