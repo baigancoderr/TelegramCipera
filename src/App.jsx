@@ -6,7 +6,12 @@ import Loader from "./Context/Loader";
 import MagicRings from "./Layout/MagicRings";
 import { Toaster } from "react-hot-toast";
 import ScrollToTop from "./Components/utils/ScrollToTop";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+
 function App() {
+
+const queryClient = new QueryClient();
   const [isTelegram, setIsTelegram] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   // const ALLOW_BROWSER = false;
@@ -54,6 +59,7 @@ useEffect(() => {
 }
 
  return (
+  <QueryClientProvider client={queryClient}>
     <div className="relative min-h-screen text-white overflow-hidden">
 
       {initialLoading ? (
@@ -86,7 +92,8 @@ useEffect(() => {
         </>
       )}
     </div>
-  );
+  </QueryClientProvider>
+);
 }
 
 export default App;
