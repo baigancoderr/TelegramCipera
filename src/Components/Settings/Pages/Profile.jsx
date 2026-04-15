@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
 import React, { useState, useEffect, useMemo  } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery ,useQueryClient } from "@tanstack/react-query";
+
 
 
 const Profile = () => {
   const navigate = useNavigate();
-
+const queryClient = useQueryClient();
   const [tgUser, setTgUser] = useState(null);
   const [apiUser, setApiUser] = useState(null);
   // const [loading, setLoading] = useState(true);
@@ -84,12 +85,7 @@ const handleUpdate = () => {
   setIsEditing(true);
 };
 
-useEffect(() => {
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    setApiUser(JSON.parse(storedUser));
-  }
-}, []);
+
 
 useEffect(() => {
   
@@ -127,6 +123,7 @@ const getTelegramUser = () => {
 };
 
 const tgPayload = useMemo(() => getTelegramUser(), []);
+
 const token = localStorage.getItem("token");
 
 const {
@@ -134,24 +131,23 @@ const {
   isLoading: loading,
   isError,
 } = useQuery({
-  queryKey: ["telegramLogin", tgPayload?.telegramId],
+queryKey: ["telegramLogin", tgPayload?.telegramId, token],
   queryFn: async () => {
     const res = await api.post("/user/telegram-login", tgPayload);
     return res.data;
   },
-
-
-enabled: !!tgPayload,
-  staleTime: 10 * 60 * 1000, // 10 min 
-  cacheTime: 30 * 60 * 1000, // 30 min 
-  retry: 1,
+  enabled: !!tgPayload && !token, // 🔥 IMPORTANT
+  staleTime: 0,
+  cacheTime: 0,
+  refetchOnMount: "always",     // 🔥 ADD THIS
+  refetchOnWindowFocus: false,
 });
 
 
 useEffect(() => {
   if (!data) return;
 
-  if (data.success) {
+  if (data.success && data.user) {
     setApiUser(data.user);
 
     localStorage.setItem("token", data.token);
@@ -160,12 +156,13 @@ useEffect(() => {
 
     setShowReferralPopup(false);
   } 
-  else if (data.isNewUser) {
+  else if (data.isNewUser && !data.success) {
     setShowReferralPopup(true);
   } 
   else {
-    // 🔥 important
-    localStorage.clear(); // invalid user remove
+    // ❌ INVALID / OLD TOKEN / DB CLEARED CASE
+    localStorage.clear();
+    queryClient.clear();   // 🔥 YAHI LAGANA HAI
     setApiUser(null);
 
     toast.error("Session expired, please login again");
@@ -181,13 +178,17 @@ useEffect(() => {
   }
 }, []);
 
-
 useEffect(() => {
-  const existingUser = localStorage.getItem("user");
-  if (existingUser) {
-    setShowReferralPopup(false);
+  const storedUser = localStorage.getItem("user");
+
+  if (token && !storedUser) {
+    localStorage.clear();
+    queryClient.clear();
+    setApiUser(null);
   }
-}, []);
+}, [token]);
+
+
 
 
 useEffect(() => {
@@ -225,21 +226,16 @@ const handleReferralSubmit = async () => {
 
     const data = res.data;
 
-    if (data.success) {
-      // ✅ Set state
-      setApiUser(data.user);
+   if (data.success) {
+  setApiUser(data.user);
 
-      // ✅ Save to localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("referral", inputReferral);
-      localStorage.setItem("userId", data.user.userId || data.user._id);
-      localStorage.setItem("user", JSON.stringify(data.user));
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
 
-      // ✅ Close popup
-      setShowReferralPopup(false);
+  queryClient.clear(); // 🔥 ADD THIS
 
-      toast.success("Login Success ✅");
-    } else {
+  setShowReferralPopup(false);
+} else {
       toast.error(data.message || "Login failed ❌");
     }
 
