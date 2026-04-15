@@ -100,78 +100,115 @@ const [inputReferral, setInputReferral] = useState("");
   // ✅ Telegram + API Integration
 
 useEffect(() => {
-  const initTelegram = async () => {
+  const init = async () => {
     try {
-      const tg = window.Telegram?.WebApp;
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-      if (!tg) {
-        console.log("Not inside Telegram");
-        setLoading(false);
-        return;
+      // ✅ Telegram user always set karo
+     const tg = window.Telegram?.WebApp;
+
+if (tg) {
+  tg.ready();
+}
+
+const tgUserData = tg?.initDataUnsafe?.user;
+      if (tgUserData) setTgUser(tgUserData);
+
+      // ✅ Instant UI load from cache
+      if (storedUser) {
+        setApiUser(JSON.parse(storedUser));
       }
+
+      // ✅ Token hai → fresh data lao
+      if (token) {
+        try {
+          const res = await api.get("/user/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.data.success) {
+            setApiUser(res.data.user);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+            return;
+          }
+        } catch (err) {
+          console.log("Token invalid → fallback to login");
+          localStorage.clear();
+        }
+      }
+
+      // ❌ No token → Telegram login
+    if (!tg) {
+  toast.error("Open inside Telegram ❌");
+  return;
+}
 
       tg.ready();
 
       const user = tg.initDataUnsafe?.user;
+      if (!user) return;
 
-      if (!user) {
-        console.log("No Telegram user found");
-        setLoading(false);
-        return;
-      }
-
-      setTgUser(user);
-
-      // ✅ Referral detect (ONLY from TG or URL)
       const urlParams = new URLSearchParams(window.location.search);
       const refFromUrl = urlParams.get("ref");
       const refFromTG = tg.initDataUnsafe?.start_param;
 
       const referralCode = refFromTG || refFromUrl || "";
 
-      // 🔥 ALWAYS call API first
       const res = await api.post("/user/telegram-login", {
         telegramId: user.id,
         name: `${user.first_name} ${user.last_name || ""}`,
         username: user.username || "",
-        referralCode: referralCode, // empty bhi chalega
+        referralCode,
       });
 
       const data = res.data;
 
-   if (data.success) {
-  setApiUser(data.user);
+      if (data.success) {
+        setApiUser(data.user);
 
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("userId", data.user.userId || data.user._id);
-  localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userId", data.user.userId || data.user._id);
 
-  if (referralCode) {
-    localStorage.setItem("referral", referralCode);
-  }
+        setShowReferralPopup(false);
+      } 
+      else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
+        setShowReferralPopup(true);
+      } 
+      else {
+        toast.error(data.message);
+      }
 
-  setShowReferralPopup(false);
-} 
-// 🔥 UPDATED LOGIC
-else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
-  setShowReferralPopup(true);
-} 
-else {
-  toast.error(data.message || "Login failed");
-}
-
-    } catch (error) {
-      console.error("Telegram Login Error:", error);
-
-      // ❌ API fail → popup mat dikha blindly
+    } catch (err) {
+      console.error(err);
       toast.error("Something went wrong ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  initTelegram();
+  init();
 }, []);
+
+const refreshUser = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await api.get("/user/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.data.success) {
+    setApiUser(res.data.user);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    toast.success("Updated ✅");
+  }
+};
+
+const handleLogout = () => {
+  localStorage.clear();
+  window.location.reload();
+};
 
 useEffect(() => {
   document.body.style.overflow = showReferralPopup ? "hidden" : "auto";
@@ -236,8 +273,9 @@ const handleReferralSubmit = async () => {
 };
 
   // ✅ Referral Dynamic 
-const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode || "loadingg" }`;
-
+const referralLink = apiUser?.referralCode
+  ? `https://t.me/cipera_bot?startapp=${apiUser.referralCode}`
+  : "Loading...";
   // ✅ Share
   const handleShare = () => {
     const text = "Join and earn 🚀";
