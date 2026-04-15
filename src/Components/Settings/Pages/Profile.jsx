@@ -38,27 +38,31 @@ const Profile = () => {
 
 
   // ─── TanStack Query: /me ────────────────────────────────────────────────
-  const {
-    data: apiUser,
-    isLoading: meLoading,
-    isFetching,
-  } = useQuery({
-    queryKey: ["me"],
-    queryFn: fetchMe,
-     refetchOnWindowFocus: false, 
-    enabled: !!localStorage.getItem("token"), // don't run until token exists
-    retry: (failureCount, error) => {
-      // ❌ DB reset / token invalid → don't retry, just clear everything
-      if (error?.response?.status === 401 || error?.message === "NO_TOKEN") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("userId");
-        queryClient.removeQueries({ queryKey: ["me"] }); // nuke cache
-        return false;
-      }
-      return failureCount < 1;
-    },
-  });
+ const {
+  data: apiUser,
+  isLoading: meLoading,
+  isFetching,
+} = useQuery({
+  queryKey: ["me"],
+  queryFn: fetchMe,
+
+  enabled: !!localStorage.getItem("token"),
+
+  staleTime: 5 * 60 * 1000,        // 🔥 key fix
+  refetchOnWindowFocus: false,     // already good
+  refetchOnMount: false,           // 🔥 prevent tab switch refetch
+  refetchOnReconnect: false,       // optional (extra safety)
+
+  retry: (failureCount, error) => {
+    if (error?.message === "NO_TOKEN") {
+      localStorage.clear();
+      return false;
+    }
+    return failureCount < 1;
+  },
+});
+
+
 
 
   const showSkeleton = loading || (!apiUser && meLoading);
@@ -105,7 +109,7 @@ const Profile = () => {
 
           setShowReferralPopup(false);
 
-          // 🔥 Invalidate cache → useQuery refetches /me automatically
+          //  Invalidate cache → useQuery refetches /me automatically
           await queryClient.invalidateQueries({ queryKey: ["me"] });
 
         } else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
@@ -158,7 +162,7 @@ const Profile = () => {
         setShowReferralPopup(false);
         toast.success("Login Success ✅");
 
-        // 🔥 Same pattern — invalidate, let useQuery do the rest
+        //  Same pattern — invalidate, let useQuery do the rest
         await queryClient.invalidateQueries({ queryKey: ["me"] });
       } else {
         toast.error(data.message || "Login failed ❌");
