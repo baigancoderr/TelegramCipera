@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, User, Copy, Share2 } from "lucide-react";
 import userimg2 from "../../../assets/setting/user-img.jpeg";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,7 @@ import api from "../../../api/axios";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [tgUser, setTgUser] = useState(null);
   const [apiUser, setApiUser] = useState(null);
@@ -60,6 +62,7 @@ const handleSave = async () => {
 
       setApiUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      queryClient.setQueryData(["me"], updatedUser);
 
       setIsSaved(true);
       setIsEditing(false);
@@ -92,9 +95,37 @@ useEffect(() => {
 }, [apiUser]);
 
   const [showReferralPopup, setShowReferralPopup] = useState(false);
-const [inputReferral, setInputReferral] = useState("");
+  const [inputReferral, setInputReferral] = useState("");
 
+  const token = localStorage.getItem("token");
 
+  const {
+    data: meUser,
+    isLoading: meLoading,
+    isError: meError,
+  } = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => {
+      const res = await api.get("/me");
+
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Failed to fetch user data");
+      }
+
+      return res.data.user;
+    },
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (meUser) {
+      setApiUser(meUser);
+      localStorage.setItem("user", JSON.stringify(meUser));
+    }
+  }, [meUser]);
 
 
   // ✅ Telegram + API Integration
@@ -328,8 +359,8 @@ const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode |
               <div className="bg-[#00000020] p-3 rounded-xl border border-[#444B55]">
                 <p className="text-xs text-gray-400">USER ID</p>
                 <p className="text-white">
-                {loading 
-  ? "Loading..." 
+                {loading || meLoading
+  ? "Loading..."
   : apiUser?.userId || "N/A"}
                 </p>
               </div>
@@ -337,8 +368,8 @@ const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode |
               <div className="bg-[#00000020] p-3 rounded-xl border border-[#444B55]">
                 <p className="text-xs text-gray-400">PARENT ID</p>
                 <p className="text-white">
-                {loading 
-  ? "Loading..." 
+                {loading || meLoading
+  ? "Loading..."
   : apiUser?.referredBy || "N/A"}
                 </p>
               </div>
