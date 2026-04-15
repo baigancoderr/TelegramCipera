@@ -113,6 +113,7 @@ useEffect(() => {
 
       if (storedUser) {
         setApiUser(JSON.parse(storedUser));
+        setLoading(false);
       }
 
       if (token && storedUser) {
@@ -131,12 +132,34 @@ useEffect(() => {
             err.response?.status === 404
           ) {
             localStorage.clear();
-            window.location.reload();
-            return;
+
+            const user = tg?.initDataUnsafe?.user;
+
+            if (tg && user) {
+              const res = await api.post("/user/telegram-login", {
+                telegramId: user.id,
+                name: `${user.first_name} ${user.last_name || ""}`,
+                username: user.username || "",
+                referralCode: "",
+              });
+
+              const data = res.data;
+
+              if (data.success) {
+                setApiUser(data.user);
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                localStorage.setItem(
+                  "userId",
+                  data.user.userId || data.user._id
+                );
+              } else if (data.isNewUser) {
+                setShowReferralPopup(true);
+              }
+            }
           }
         }
 
-        setLoading(false);
         return;
       }
 
@@ -175,7 +198,6 @@ useEffect(() => {
       } else if (data.isNewUser) {
         setShowReferralPopup(true);
       }
-
     } catch (err) {
       toast.error("Something went wrong ❌");
     } finally {
