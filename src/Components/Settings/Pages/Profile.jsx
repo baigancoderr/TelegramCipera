@@ -1,21 +1,18 @@
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, User, Copy, Share2 } from "lucide-react";
 import userimg2 from "../../../assets/setting/user-img.jpeg";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
-import React, { useState, useEffect, useMemo  } from "react";
-import { useQuery ,useQueryClient } from "@tanstack/react-query";
-
 
 
 const Profile = () => {
   const navigate = useNavigate();
-const queryClient = useQueryClient();
+
   const [tgUser, setTgUser] = useState(null);
   const [apiUser, setApiUser] = useState(null);
-  // const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [refLoading, setRefLoading] = useState(false);
 
 
 
@@ -86,9 +83,7 @@ const handleUpdate = () => {
 };
 
 
-
 useEffect(() => {
-  
   if (apiUser?.walletAddress) {
     setWalletAddress(apiUser.walletAddress);
     setIsSaved(true);
@@ -104,92 +99,79 @@ const [inputReferral, setInputReferral] = useState("");
 
   // ✅ Telegram + API Integration
 
-const getTelegramUser = () => {
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
+useEffect(() => {
+  const initTelegram = async () => {
+    try {
+      const tg = window.Telegram?.WebApp;
 
-  if (!tg || !user) return null;
+      if (!tg) {
+        console.log("Not inside Telegram");
+        setLoading(false);
+        return;
+      }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const refFromUrl = urlParams.get("ref");
-  const refFromTG = tg.initDataUnsafe?.start_param;
+      tg.ready();
 
-  return {
-    telegramId: user.id,
-    name: `${user.first_name} ${user.last_name || ""}`,
-    username: user.username || "",
-    referralCode: refFromTG || refFromUrl || "",
+      const user = tg.initDataUnsafe?.user;
+
+      if (!user) {
+        console.log("No Telegram user found");
+        setLoading(false);
+        return;
+      }
+
+      setTgUser(user);
+
+      // ✅ Referral detect (ONLY from TG or URL)
+      const urlParams = new URLSearchParams(window.location.search);
+      const refFromUrl = urlParams.get("ref");
+      const refFromTG = tg.initDataUnsafe?.start_param;
+
+      const referralCode = refFromTG || refFromUrl || "";
+
+      // 🔥 ALWAYS call API first
+      const res = await api.post("/user/telegram-login", {
+        telegramId: user.id,
+        name: `${user.first_name} ${user.last_name || ""}`,
+        username: user.username || "",
+        referralCode: referralCode, // empty bhi chalega
+      });
+
+      const data = res.data;
+
+   if (data.success) {
+  setApiUser(data.user);
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userId", data.user.userId || data.user._id);
+  localStorage.setItem("user", JSON.stringify(data.user));
+
+  if (referralCode) {
+    localStorage.setItem("referral", referralCode);
+  }
+
+  setShowReferralPopup(false);
+} 
+// 🔥 UPDATED LOGIC
+else if (data.isNewUser || data.message?.toLowerCase().includes("referral")) {
+  setShowReferralPopup(true);
+} 
+else {
+  toast.error(data.message || "Login failed");
+}
+
+    } catch (error) {
+      console.error("Telegram Login Error:", error);
+
+      // ❌ API fail → popup mat dikha blindly
+      toast.error("Something went wrong ❌");
+    } finally {
+      setLoading(false);
+    }
   };
-};
 
-const tgPayload = useMemo(() => getTelegramUser(), []);
-
-const token = localStorage.getItem("token");
-
-const {
-  data,
-  isLoading: loading,
-  isError,
-} = useQuery({
-queryKey: ["telegramLogin", tgPayload?.telegramId, token],
-  queryFn: async () => {
-    const res = await api.post("/user/telegram-login", tgPayload);
-    return res.data;
-  },
-  enabled: !!tgPayload && !token, // 🔥 IMPORTANT
-  staleTime: 0,
-  cacheTime: 0,
-  refetchOnMount: "always",     // 🔥 ADD THIS
-  refetchOnWindowFocus: false,
-});
-
-
-useEffect(() => {
-  if (!data) return;
-
-  if (data.success && data.user) {
-    setApiUser(data.user);
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userId", data.user.userId || data.user._id);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    setShowReferralPopup(false);
-  } 
-  else if (data.isNewUser && !data.success) {
-    setShowReferralPopup(true);
-  } 
-  else {
-    // ❌ INVALID / OLD TOKEN / DB CLEARED CASE
-    localStorage.clear();
-    queryClient.clear();   // 🔥 YAHI LAGANA HAI
-    setApiUser(null);
-
-    toast.error("Session expired, please login again");
-  }
-}, [data]);
-
-useEffect(() => {
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
-
-  if (user) {
-    setTgUser(user);
-  }
+  initTelegram();
 }, []);
-
-useEffect(() => {
-  const storedUser = localStorage.getItem("user");
-
-  if (token && !storedUser) {
-    localStorage.clear();
-    queryClient.clear();
-    setApiUser(null);
-  }
-}, [token]);
-
-
-
 
 useEffect(() => {
   document.body.style.overflow = showReferralPopup ? "hidden" : "auto";
@@ -197,12 +179,12 @@ useEffect(() => {
 
 const handleReferralSubmit = async () => {
   // 🔥 Start loading
-  setRefLoading(true);
+  setLoading(true);
 
   // ✅ Validation
   if (!/^CPR[A-Z0-9]{6}$/.test(inputReferral)) {
     toast.error("Invalid Referral Code ❌");
-    setRefLoading(false);
+    setLoading(false);
     return;
   }
 
@@ -212,7 +194,7 @@ const handleReferralSubmit = async () => {
 
     if (!user) {
       toast.error("Telegram user not found ❌");
-      setRefLoading(false);
+      setLoading(false);
       return;
     }
 
@@ -226,16 +208,21 @@ const handleReferralSubmit = async () => {
 
     const data = res.data;
 
-   if (data.success) {
-  setApiUser(data.user);
+    if (data.success) {
+      // ✅ Set state
+      setApiUser(data.user);
 
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("user", JSON.stringify(data.user));
+      // ✅ Save to localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("referral", inputReferral);
+      localStorage.setItem("userId", data.user.userId || data.user._id);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-  queryClient.clear(); // 🔥 ADD THIS
+      // ✅ Close popup
+      setShowReferralPopup(false);
 
-  setShowReferralPopup(false);
-} else {
+      toast.success("Login Success ✅");
+    } else {
       toast.error(data.message || "Login failed ❌");
     }
 
@@ -244,7 +231,7 @@ const handleReferralSubmit = async () => {
     toast.error("Something went wrong ❌");
   } finally {
     // 🔥 Stop loading (VERY IMPORTANT)
-    setRefLoading(false);
+    setLoading(false);
   }
 };
 
@@ -287,13 +274,6 @@ const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode |
       toast.error("Copy failed ❌");
     }
   };
-
-
-  useEffect(() => {
-  if (isError) {
-    toast.error("Something went wrong ❌");
-  }
-}, [isError]);
 
   return (
     <div className="min-h-screen flex justify-center pb-24 px-2 py-3 text-white ">
@@ -465,12 +445,12 @@ const referralLink = `https://t.me/cipera_bot?startapp=${apiUser?.referralCode |
       {/* Button */}
      <button
   onClick={handleReferralSubmit}
-  disabled={refLoading}
+  disabled={loading}
   className={`w-full py-2 rounded-lg flex items-center justify-center gap-2
   bg-gradient-to-r from-[#587FFF] to-[#09239F]
-  ${refLoading  ? "opacity-50 cursor-not-allowed" : ""}`}
+  ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
 >
-  {refLoading  ? (
+  {loading ? (
     <>
       {/* 🔄 Spinner */}
       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
