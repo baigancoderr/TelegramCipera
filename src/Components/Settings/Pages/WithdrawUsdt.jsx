@@ -5,74 +5,33 @@ import { ArrowLeft, User, Wallet, Send, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
+import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const WithdrawUSDT = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [referralBalance, setReferralBalance] = useState();
   const [roiBalance, setRoiBalance] = useState();
 
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [walletType, setWalletType] = useState("referral");
-  const [withdrawHistory, setWithdrawHistory] = useState([]);
-const [historyLoading, setHistoryLoading] = useState(false);
 
-  const handleWithdraw = async () => {
-    if (!walletType || !amount || !address) {
-      return toast.error("All fields are required ❌");
-    }
 
-    if (amount < 5) {
-      return toast.error("Minimum withdrawal is 5 USDC ❌");
-    }
+ const handleWithdraw = () => {
+  if (!walletType || !amount || !address) {
+    return toast.error("All fields are required ❌");
+  }
 
-    if (loading) return;
+  if (amount < 5) {
+    return toast.error("Minimum withdrawal is 5 USDC ❌");
+  }
 
-    try {
-      setLoading(true);
+  if (withdrawMutation.isPending) return;
 
-      const token = localStorage.getItem("token");
-
-      const res = await api.post(
-        "/user/withdraw",
-        {
-          amount: Number(amount),
-          walletType,
-          walletAddress: address,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = res.data;
-
-      if (data.success) {
-        toast.success(data.message || "Withdraw Success ✅");
-
-        // 🔥 Reset input
-        setAmount("");
-
-        // 🔥 Update balances instantly (PRO 🔥)
-        if (data.data?.balances) {
-          setReferralBalance(data.data.balances.referral);
-          setRoiBalance(data.data.balances.roi);
-        }
-
-      } else {
-        toast.error(data.message || "Failed ❌");
-      }
-
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || "API Error ❌");
-    } finally {
-      setLoading(false);
-    }
-  };
+  withdrawMutation.mutate();
+};
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -103,33 +62,79 @@ const [historyLoading, setHistoryLoading] = useState(false);
   //   status: i % 2 === 0 ? "Success" : "Pending",
   // }));
 
-  useEffect(() => {
-  const fetchHistory = async () => {
-    try {
-      setHistoryLoading(true);
+ const fetchWithdrawalHistory = async () => {
+  const token = localStorage.getItem("token");
 
-      const token = localStorage.getItem("token");
+  const res = await api.get("/user/withdrawal-history", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-      const res = await api.get("/user/withdrawal-history", {
+  return res.data.data.withdrawals;
+};
+
+
+const {
+  data: withdrawHistory = [],
+  isLoading: historyLoading,
+} = useQuery({
+  queryKey: ["withdrawal-history"],
+  queryFn: fetchWithdrawalHistory,
+
+  // 🔥 IMPORTANT OPTIONS
+  staleTime: 1000 * 60 * 5, 
+  cacheTime: 1000 * 60 * 10, 
+  refetchOnWindowFocus: false, 
+});
+
+const queryClient = useQueryClient();
+
+const withdrawMutation = useMutation({
+  mutationFn: async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await api.post(
+      "/user/withdraw",
+      {
+        amount: Number(amount),
+        walletType,
+        walletAddress: address,
+      },
+      {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      }
+    );
 
-      if (res.data?.status === "success") {
-        setWithdrawHistory(res.data.data.withdrawals || []);
+    return res.data;
+  },
+
+  onSuccess: (data) => {
+    if (data.success) {
+      toast.success(data.message || "Withdraw Success ✅");
+
+      setAmount("");
+
+      if (data.data?.balances) {
+        setReferralBalance(data.data.balances.referral);
+        setRoiBalance(data.data.balances.roi);
       }
 
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load history ❌");
-    } finally {
-      setHistoryLoading(false);
+   
+   queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
+    } else {
+      toast.error(data.message || "Failed ❌");
     }
-  };
+  },
 
-  fetchHistory();
-}, []);
+  onError: (err) => {
+    console.error(err);
+    toast.error(err?.response?.data?.message || "API Error ❌");
+  },
+});
+
 
   // 🔥 Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -271,15 +276,15 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
             {/* ✅ Button */}
             <button
               onClick={handleWithdraw}
-              disabled={loading}
+           disabled={withdrawMutation.isPending}
               className={`w-full py-3 rounded-full
   bg-gradient-to-r from-[#587FFF] to-[#09239F]
   flex items-center justify-center gap-2
-  ${loading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
+  ${withdrawMutation.isPending ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
   transition`}
             >
               <Send size={16} />
-              {loading ? "Processing..." : "Withdraw Now"}
+             {withdrawMutation.isPending ? "Processing..." : "Withdraw Now"}
             </button>
 
           </div>
