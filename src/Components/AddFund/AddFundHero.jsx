@@ -252,7 +252,7 @@ const AddFundPage = () => {
               </div>
             </div>
 
-            <p className="text-xs text-blue-400 mt-2">Minimum: $0.2 USDT</p>
+            <p className="text-xs text-blue-400 mt-2">Minimum: $ 1 USDT</p>
           </div>
         </div>
 

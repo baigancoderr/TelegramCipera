@@ -107,7 +107,7 @@ const PaymentScreen = () => {
     setTimeout(() => {
       navigate("/addfund", { replace: true });
     }, 1200);
-  };
+  };  
 
   // Safety check
   if (!amount || !walletAddress) {
