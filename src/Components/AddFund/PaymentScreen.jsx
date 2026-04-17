@@ -61,9 +61,9 @@ const PaymentScreen = () => {
   const handleCopy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Copied Successfully ✅");
+      toast.success("Copied Successfully");
     } catch {
-      toast.error("Failed to copy ❌");
+      toast.error("Failed to copy");
     }
   };
 

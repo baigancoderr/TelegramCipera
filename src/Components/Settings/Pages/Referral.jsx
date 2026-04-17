@@ -138,7 +138,7 @@ const handleShare = () => {
   const url = referralLink;
 
   if (!url) {
-    toast.error("Referral link not ready ❌");
+    toast.error("Referral link not ready ");
     return;
   }
 

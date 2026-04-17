@@ -21,11 +21,11 @@ const WithdrawUSDT = () => {
 
  const handleWithdraw = () => {
   if (!walletType || !amount || !address) {
-    return toast.error("All fields are required ❌");
+    return toast.error("All fields are required ");
   }
 
   if (amount < 5) {
-    return toast.error("Minimum withdrawal is 5 USDC ❌");
+    return toast.error("Minimum withdrawal is 5 USDC ");
   }
 
   if (withdrawMutation.isPending) return;
@@ -125,13 +125,13 @@ const withdrawMutation = useMutation({
    
    queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
     } else {
-      toast.error(data.message || "Failed ❌");
+      toast.error(data.message || "Failed ");
     }
   },
 
   onError: (err) => {
     console.error(err);
-    toast.error(err?.response?.data?.message || "API Error ❌");
+    toast.error(err?.response?.data?.message || "API Error ");
   },
 });
 

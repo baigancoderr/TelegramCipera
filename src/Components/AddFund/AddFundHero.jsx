@@ -98,18 +98,18 @@ const AddFundPage = () => {
   const userId = getUserId();
 
   if (!userId) {
-    toast.error("Session expired. Please login again ❌");
+    toast.error("Session expired, login again ");
     setTimeout(() => navigate("/settings"), 1500);
     return;
   }
 
   if (!amount || Number(amount) <= 0) {
-    toast.error("Please Enter Your Amount ❌");
+    toast.error("Please Enter Your Amount");
     return;
   }
 
   if (!isChecked) {
-    toast.error("Please Accept Terms & Conditions ❌");
+    toast.error("Please Accept Terms & Conditions ");
     return;
   }
 
@@ -164,7 +164,7 @@ const AddFundPage = () => {
       toast.error(errorMsg);
     }
   } catch (error) {
-    console.error("❌ Deposit API Error Details:", {
+    console.error(" Deposit API Error Details:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,

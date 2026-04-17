@@ -86,7 +86,39 @@ useEffect(() => {
           {/* ROUTER */}
           <BrowserRouter>
             <ScrollToTop />
-            <Toaster position="top-center" reverseOrder={false} />
+            {/* <Toaster position="top-center" reverseOrder={false} /> */}
+
+            <Toaster
+  position="top-center"
+  reverseOrder={false}
+  toastOptions={{
+    style: {
+      background: "#1a1a2e",   // background color
+      color: "#fff",           // text color
+      border: "1px solid #444385",
+    },
+    success: {
+      style: {
+        background: "#0f5132",
+        color: "#d1e7dd",
+      },
+      iconTheme: {
+        primary: "#00ffae",
+        secondary: "#0f5132",
+      },
+    },
+    error: {
+      style: {
+        background: "#842029",
+        color: "#f8d7da",
+      },
+      iconTheme: {
+        primary: "#ff4d6d",
+        secondary: "#842029",
+      },
+    },
+  }}
+/>
             <AppWrapper />
           </BrowserRouter>
         </>

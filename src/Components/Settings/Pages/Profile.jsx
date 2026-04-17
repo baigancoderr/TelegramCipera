@@ -119,7 +119,7 @@ const Profile = () => {
         }
       } catch (error) {
         console.error("Telegram Login Error:", error);
-        toast.error("Something went wrong ❌");
+        toast.error("Something went wrong ");
       } finally {
         setLoading(false);
       }
@@ -135,7 +135,7 @@ const Profile = () => {
   // ─── Referral submit ─────────────────────────────────────────────────────
   const handleReferralSubmit = async () => {
     if (!/^CPR[A-Z0-9]{6}$/.test(inputReferral)) {
-      toast.error("Invalid Referral Code ❌");
+      toast.error("Invalid Referral Code ");
       return;
     }
 
@@ -143,7 +143,7 @@ const Profile = () => {
     try {
       const tg = window.Telegram?.WebApp;
       const user = tg?.initDataUnsafe?.user;
-      if (!user) { toast.error("Telegram user not found ❌"); return; }
+      if (!user) { toast.error("Telegram user not found"); return; }
 
       const res = await api.post("/user/telegram-login", {
         telegramId: user.id,
@@ -165,11 +165,11 @@ const Profile = () => {
         //  Same pattern — invalidate, let useQuery do the rest
         await queryClient.invalidateQueries({ queryKey: ["me"] });
       } else {
-        toast.error(data.message || "Login failed ❌");
+        toast.error(data.message || "Login failed ");
       }
     } catch (err) {
       console.error("Referral Submit Error:", err);
-      toast.error("Something went wrong ❌");
+      toast.error("Something went wrong ");
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ const Profile = () => {
 
   // ─── Wallet save/update ──────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!walletAddress.trim()) { toast.error("Enter wallet address ❌"); return; }
+    if (!walletAddress.trim()) { toast.error("Enter wallet address"); return; }
     if (saving) return;
 
     try {
@@ -201,11 +201,11 @@ const Profile = () => {
         setIsSaved(true);
         setIsEditing(false);
       } else {
-        toast.error(res.data.message || "Failed ❌");
+        toast.error(res.data.message || "Failed ");
       }
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "API Error ❌");
+      toast.error(err?.response?.data?.message || "API Error ");
     } finally {
       setSaving(false);
     }
@@ -237,7 +237,7 @@ const Profile = () => {
       await navigator.clipboard.writeText(referralLink);
       toast.success("Copied 🚀");
     } catch {
-      toast.error("Copy failed ❌");
+      toast.error("Copy failed ");
     }
   };
 
