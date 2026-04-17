@@ -9,7 +9,8 @@ const Footer = () => {
 
   const activeTab = hovered || location.pathname;
 
-  const isActive = (path) => activeTab === path;
+  // const isActive = (path) => activeTab === path;
+  const isActive = (path) => activeTab.startsWith(path);
 
   const renderIcon = (Icon, path, label) => {
     const active = isActive(path);

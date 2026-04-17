@@ -31,12 +31,19 @@ const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "—");
 
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 
-const fetchDepositHistory = async () => {
+const fetchDepositHistory = async (page, startDate, endDate) => {
   const token = localStorage.getItem("token");
+
   const res = await api.get("/user/deposit-history", {
+    params: {
+      page,
+      startDate,
+      endDate,
+    },
     headers: { Authorization: `Bearer ${token}` },
   });
-  return res.data; // { success, pagination, deposits }
+
+  return res.data;
 };
 
 // ─── CopyCell ────────────────────────────────────────────────────────────────
@@ -75,12 +82,14 @@ const DepositHistory = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("history"); // "history" | "balance"
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+ 
+  const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
 
   // 🔥 Cached Query — won't hit API again for 5 minutes
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["deposit-history"],
-    queryFn: fetchDepositHistory,
+   queryKey: ["deposit-history", currentPage, startDate, endDate],
+queryFn: () => fetchDepositHistory(currentPage, startDate, endDate),
     staleTime: 1000 * 60 * 5,   // 5 min fresh
     cacheTime: 1000 * 60 * 10,  // 10 min in cache
     refetchOnWindowFocus: false,
@@ -96,14 +105,16 @@ const DepositHistory = () => {
     .reduce((acc, d) => acc + (d.creditedAmount ?? 0), 0);
 
   // ─── Pagination ──────────────────────────────────────────────────────────
-  const totalPages = Math.ceil(deposits.length / itemsPerPage);
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentData = deposits.slice(indexOfFirst, indexOfLast);
-
+  // const totalPages = Math.ceil(deposits.length / itemsPerPage);
+  // const indexOfLast = currentPage * itemsPerPage;
+  // const indexOfFirst = indexOfLast - itemsPerPage;
+  // const currentData = deposits.slice(indexOfFirst, indexOfLast);
+// const deposits = data?.deposits || [];
+// const pagination = data?.pagination || {};
+const totalPages = pagination.pages || 1;
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex justify-center px-2 py-3 pb-24 text-white bg-[#0B0F19]">
+    <div className="min-h-screen flex justify-center px-2 py-3 pb-24 text-white ">
       <div className="w-full max-w-md mx-auto">
 
         {/* HEADER */}
@@ -158,8 +169,8 @@ const DepositHistory = () => {
                 <div className="flex gap-3 items-center">
                   <TrendingUp size={18} className="text-blue-400" />
                   <div>
-                    <p className="text-xs text-gray-400">Total Deposited</p>
-                    <p className="text-lg font-bold">${totalDeposited.toFixed(2)}</p>
+                    <p className="text-xs text-gray-400">Total Balance</p>
+                    <p className="text-md font-bold">${totalDeposited.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -169,7 +180,7 @@ const DepositHistory = () => {
                   <Layers size={18} className="text-purple-400" />
                   <div>
                     <p className="text-xs text-gray-400">Total Records</p>
-                    <p className="text-lg font-bold">{totalRecords}</p>
+                    <p className="text-md font-bold">{totalRecords}</p>
                   </div>
                 </div>
               </div>
@@ -180,6 +191,61 @@ const DepositHistory = () => {
               <h2 className="text-lg font-semibold bg-gradient-to-r from-[#587FFF] to-[#09239F] bg-clip-text text-transparent">
                 Transactions
               </h2>
+
+
+
+<div className="flex flex-col gap-4 mb-4">
+
+  {/* DATE INPUTS - Vertical Stack */}
+  <div className="flex flex-col gap-3">
+
+    {/* START DATE */}
+    <div className="flex flex-col">
+      <label className="text-[10px] text-gray-400 mb-1">Start Date</label>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        className="bg-[#0B0F1A] border border-[#444385] text-xs px-3 py-2 rounded-lg
+                   text-gray-300 focus:outline-none focus:border-blue-500
+                   transition-all duration-200 [color-scheme:dark]"
+      />
+    </div>
+
+    {/* END DATE */}
+    <div className="flex flex-col">
+      <label className="text-[10px] text-gray-400 mb-1">End Date</label>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        className="bg-[#0B0F1A] border border-[#444385] text-xs px-3 py-2 rounded-lg
+                   text-gray-300 focus:outline-none focus:border-blue-500
+                   transition-all duration-200 [color-scheme:dark]"
+      />
+    </div>
+
+  </div>
+
+  {/* PREMIUM 3D FILTER BUTTON */}
+  <div className="flex justify-end pt-1">
+    <button
+      onClick={() => setCurrentPage(1)}
+      className="px-6 py-2.5 text-xs font-semibold rounded-xl
+                 bg-gradient-to-br from-[#587FFF] via-[#3B6EFF] to-[#09239F]
+                 shadow-[0_4px_8px_-2px_rgb(88,127,255,0.5),inset_0_-3px_8px_rgba(0,0,0,0.4)]
+                 border border-blue-400/30
+                 transition-all duration-200 ease-out
+                 hover:scale-[1.04] hover:shadow-[0_4px_5px_-2px_rgb(88,127,255,0.6)]
+                 active:scale-[0.96] active:shadow-inner active:translate-y-[1px]
+                 text-white"
+    >
+      Apply Filter
+    </button>
+  </div>
+
+</div>
+
 
               <div className="rounded-lg border border-[#81ECFF66] p-[1px]
                 bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
@@ -213,14 +279,14 @@ const DepositHistory = () => {
                               Failed to load history. Please try again.
                             </td>
                           </tr>
-                        ) : currentData.length === 0 ? (
+                        ) : deposits.length === 0 ? (
                           <tr>
                             <td colSpan="6" className="text-center py-6 text-gray-400">
                               No Deposit Records Found
                             </td>
                           </tr>
                         ) : (
-                          currentData.map((item, i) => (
+                          deposits.map((item, i) => (
                             <tr
                               key={item._id}
                               className="border-b border-[#1f2430]
@@ -229,7 +295,7 @@ const DepositHistory = () => {
                             >
                               {/* S.No */}
                               <td className="px-3 py-3 text-blue-400 font-medium">
-                                {indexOfFirst + i + 1}
+                               {(pagination.page - 1) * pagination.limit + i + 1}
                               </td>
 
                               {/* Txn Hash — click to copy */}
@@ -281,9 +347,9 @@ const DepositHistory = () => {
                   <div className="flex gap-2">
                     {[
                       { label: "⏮", action: () => setCurrentPage(1), disabled: currentPage === 1 },
-                      { label: "←", action: () => setCurrentPage(p => p - 1), disabled: currentPage === 1 },
-                      { label: "→", action: () => setCurrentPage(p => p + 1), disabled: currentPage === totalPages },
-                      { label: "⏭", action: () => setCurrentPage(totalPages), disabled: currentPage === totalPages },
+                    { label: "←", action: () => setCurrentPage(p => Math.max(1, p - 1)) },
+                    { label: "→", action: () => setCurrentPage(p => Math.min(totalPages, p + 1)) },
+                    { label: "⏭", action: () => setCurrentPage(totalPages), disabled: currentPage === totalPages },
                     ].map(({ label, action, disabled }) => (
                       <button
                         key={label}
