@@ -96,14 +96,14 @@ const PaymentScreen = () => {
   };
 
   const handleCancel = () => {
-    toast.error("Payment Cancelled ❌");
+    toast.error("Payment Cancelled ");
     setTimeout(() => {
       navigate("/addfund", { replace: true });
     }, 800);
   };
 
   const handleComplete = () => {
-    toast.success("Payment Submitted ✅\nWaiting for confirmation...");
+    toast.success("Payment Submitted \nWaiting for confirmation...");
     setTimeout(() => {
       navigate("/addfund", { replace: true });
     }, 1200);

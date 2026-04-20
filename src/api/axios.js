@@ -9,7 +9,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://ciperabackend.onrender.com/",
+  // baseURL: "https://ciperabackend.onrender.com/",
+  baseURL: "http://localhost:5000",
+  
 });
 
 // ✅ REQUEST INTERCEPTOR (YAHI ADD KARNA HAI)
