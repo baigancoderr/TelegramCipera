@@ -111,20 +111,28 @@ const withdrawMutation = useMutation({
     return res.data;
   },
 
-  onSuccess: (data) => {
-    if (data.success) {
-      toast.success(data.message || "Withdraw Success ✅");
+ onSuccess: (data) => {
+  if (data.success) {
+    toast.success(data.message || "Withdraw Success ✅");
 
-      setAmount("");
+    setAmount("");
 
-      if (data.data?.balances) {
-        setReferralBalance(data.data.balances.referral);
-        setRoiBalance(data.data.balances.roi);
+    if (data.data?.balances) {
+      setReferralBalance(data.data.balances.referral);
+      setRoiBalance(data.data.balances.roi);
+
+      // 🔥 UPDATE LOCAL STORAGE
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user) {
+        user.wallets.referral.amount = data.data.balances.referral;
+        user.wallets.roi.amount = data.data.balances.roi;
+        localStorage.setItem("user", JSON.stringify(user));
       }
+    }
 
-   
-   queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
-    } else {
+    queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
+  }
+ else {
       toast.error(data.message || "Failed ");
     }
   },
