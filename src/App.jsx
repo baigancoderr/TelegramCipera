@@ -69,7 +69,7 @@ useEffect(() => {
       ) : (
         <>
           {/* BACKGROUND */}
-          <div className="fixed inset-0 bg-black/90 -z-[5]">
+          {/* <div className="fixed inset-0 bg-black/90 -z-[5]">
             <MagicRings
               color="#fc42ff"
               colorTwo="#42fcff"
@@ -79,7 +79,7 @@ useEffect(() => {
               followMouse={true}
               clickBurst={true}
             />
-          </div>
+          </div> */}
 
           <div className="fixed inset-0 bg-black/90 -z-10"></div>
 
