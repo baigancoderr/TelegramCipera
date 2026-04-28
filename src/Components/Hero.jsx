@@ -38,11 +38,64 @@ ChartJS.register(
 
 const HomeDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("1D");
+  const [deposits, setDeposits] = useState([]);
+  const [depositsLoading, setDepositsLoading] = useState(true);
   // const [dashboardData, setDashboardData] = useState(null);
   // const [loading, setLoading] = useState(true);
   // const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+
+  // Same pattern as InvestmentHistory
+  const getTelegramId = () => {
+    const tg = window.Telegram?.WebApp;
+    if (tg?.initDataUnsafe?.user?.id) return tg.initDataUnsafe.user.id;
+
+    const savedUserId = localStorage.getItem("userId");
+    if (savedUserId) return savedUserId;
+
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.userId || user._id || user.id;
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage", e);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const fetchDeposits = async () => {
+      const telegramId = getTelegramId();
+      
+      if (!telegramId) {
+        setDepositsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await api.get("/user/deposit-history", {
+          params: { telegramId, page: 1, limit: 3 },
+        });
+        
+        if (res.data.success) {
+          // Filter only completed status
+          const completedDeposits = res.data.deposits?.filter(
+            d => d.status === "completed" || d.status === "Completed"
+          ) || [];
+          setDeposits(completedDeposits.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Error fetching deposits:", error);
+      } finally {
+        setDepositsLoading(false);
+      }
+    };
+
+    fetchDeposits();
+  }, []);
 
   // Icon Mapping (Backend does not send icons)
   const getIcon = (title) => {
@@ -55,8 +108,8 @@ const HomeDashboard = () => {
         return <Wallet size={18} />;
       case "TOTAL EARNINGS":
         return <Coins size={18} />;
-      case "ACTIVE PACKAGE":
-        return <BarChart3 size={18} />;
+      // case "ACTIVE PACKAGE":
+      //   return <BarChart3 size={18} />;
       case "TEAM":
         return <Users size={18} />;
       default:
@@ -184,27 +237,19 @@ if (error || !data) {
 }
 
 const { user, dashboard } = data;
-const stats = [
-  ...dashboard.stats.map((item) => ({
+const stats = dashboard.stats
+  .filter(
+    (item) =>
+      item.title !== "ACTIVE PACKAGE" &&
+      item.title !== "ROI EARNINGS"
+  )
+  .map((item) => ({
     ...item,
-    value: item.title === "LIVE PRICE"
-      ? `$${dashboard.tokenPrice}`
-      : item.value,
-  })),
-
-  // {
-  //   title: "TOTAL INVESTED",
-  //   value: `$${dashboard.profitTracker?.totalInvested || 0}`,
-  // },
-  // {
-  //   title: "DAILY INCOME",
-  //   value: `$${dashboard.profitTracker?.dailyIncome || 0}`,
-  // },
-  // {
-  //   title: "REFERRALS",
-  //   value: dashboard.teamStats?.totalReferrals || 0,
-  // },
-];
+    value:
+      item.title === "LIVE PRICE (SGN)"
+        ? `$${dashboard.tokenPrice}`
+        : item.value,
+  }));
 
   return (
     <motion.div
@@ -335,39 +380,46 @@ const stats = [
           transition={{ delay: 0.5 }}
         >
           <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
-            <p className="text-sm text-gray-300 mb-3">Recent Buy</p>
+            <p className="text-sm text-gray-300 mb-3">Recent Deposit</p>
 
             <div className="overflow-x-auto">
               <table className="min-w-[500px] w-full text-xs">
                 <thead>
                   <tr className="text-gray-400 border-b border-[#333] text-left">
                     <th className="px-3 py-3 w-[60px]">S.No</th>
-                    <th className="py-2">ID</th>
+                   
+                    <th className="py-2">Deposit ID</th>
                     <th>Amount</th>
                     <th>Date</th>
                     <th className="text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Add real transactions here later from API */}
-                  <tr className="border-b border-[#222] hover:bg-[#ffffff05] transition">
-                    <td className="px-3 py-3 text-blue-400 font-medium">1</td>
-                    <td>#TXN001</td>
-                    <td>$100</td>
-                    <td>12 Mar</td>
-                    <td className="text-right">
-                      <span className="text-green-400 text-xs">Success</span>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#222] hover:bg-[#ffffff05] transition">
-                    <td className="px-3 py-3 text-blue-400 font-medium">2</td>
-                    <td>#TXN002</td>
-                    <td>$250</td>
-                    <td>13 Mar</td>
-                    <td className="text-right">
-                      <span className="text-green-400 text-xs">Success</span>
-                    </td>
-                  </tr>
+                  {depositsLoading ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-4 text-gray-400">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : deposits.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-4 text-gray-500">
+                        No deposits yet
+                      </td>
+                    </tr>
+                  ) : (
+                    deposits.map((deposit, index) => (
+                      <tr key={deposit._id || index} className="border-b border-[#222] hover:bg-[#ffffff05] transition">
+                        <td className="px-3 py-3 text-blue-400 font-medium">{index + 1}</td>
+                        <td>#{deposit._id?.slice(-6) || "TXN"}</td>
+                        <td>${deposit.creditedAmount}</td>
+                        <td>{deposit.createdAt ? new Date(deposit.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "-"}</td>
+                        <td className="text-right">
+                          <span className="text-green-400 text-xs">completed</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

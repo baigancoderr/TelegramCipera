@@ -1,47 +1,126 @@
 import { Coins, CheckCircle, ArrowLeft, Loader, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../api/axios";
 
 const WalletHero = () => {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [investmentsLoading, setInvestmentsLoading] = useState(true);
+  const format3 = (num) => Number(num || 0).toFixed(3);
+  const [overview, setOverview] = useState({
+    wallets: {
+      mainBalance: 0,
+      deposit: 0,
+      referral: 0,
+      roi: 0,
+    },
+    investments: {
+      totalInvested: 0,
+    },
+    currentTokenPrice: 0,
+    roiInUsd: 0,
+  });
+  const [investments, setInvestments] = useState([]);
 
-  // 🔥 Investment Data (replace later with API)
-  const investments = [
-    { id: 1, package: 100, tokens: 110, daily: 0.157, days: 120, status: "Active", time: "07:06 PM" },
-    { id: 2, package: 50, tokens: 55, daily: 0.078, days: 700, status: "Completed", time: "11:14 AM" },
-    { id: 3, package: 500, tokens: 550, daily: 0.78, days: 300, status: "Active", time: "09:20 AM" },
-    { id: 4, package: 1000, tokens: 1100, daily: 1.57, days: 50, status: "Active", time: "02:45 PM" },
-    { id: 5, package: 100, tokens: 110, daily: 0.157, days: 400, status: "Active", time: "06:30 PM" },
-    { id: 6, package: 50, tokens: 55, daily: 0.078, days: 200, status: "Active", time: "10:10 AM" }
-  ];
+  // Same pattern as InvestmentHistory
+  const getTelegramId = () => {
+    const tg = window.Telegram?.WebApp;
+    if (tg?.initDataUnsafe?.user?.id) return tg.initDataUnsafe.user.id;
+
+    const savedUserId = localStorage.getItem("userId");
+    if (savedUserId) return savedUserId;
+
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.userId || user._id || user.id;
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage", e);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const fetchOverview = async () => {
+      try {
+        const res = await api.get("/user/overview");
+        if (res.data.status === "success" || res.data.success) {
+          setOverview(res.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching overview:", error);
+      } finally {
+        setOverviewLoading(false);
+      }
+    };
+
+    const fetchInvestments = async () => {
+      const telegramId = getTelegramId();
+      
+      if (!telegramId) {
+        console.error("No telegram ID found");
+        setInvestmentsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await api.get("/user/investments", {
+          params: { telegramId, page: 1, limit: 5 },
+        });
+        console.log("FULL RESPONSE:", res.data);
+
+        let data = [];
+        if (res.data.status === "success") {
+          data = res.data.data?.investments || [];
+        } else if (res.data.success) {
+          data = res.data.data?.investments || res.data.data || [];
+        }
+
+        console.log("FINAL DATA:", data);
+        setInvestments(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching investments:", error);
+      } finally {
+        setInvestmentsLoading(false);
+      }
+    };
+
+    fetchOverview();
+    fetchInvestments();
+  }, []);
 
   const walletData = [
   {
-    title: "TOTAL BALANCE",
-    value: "$1,540",
-    sub: "CPR + USDT",
-  },
-  
-  {
-    title: "LOCKED TOKENS",
-    value: "800 CPR",
-    sub: "700 Day Vesting",
+    title: "DEPOSIT",
+    value: `$${format3(overview.wallets.deposit)}`,
+    sub: "Wallet Balance",
   },
   {
-    title: "USDT BALANCE",
-    value: "320 USDT",
-    sub: "Available Funds",
+    title: "REFERRAL",
+    value: `$${format3(overview.wallets.referral)}`,
+    sub: "Earnings",
   },
   {
-    title: "WITHDRAWABLE AMOUNT",
-    value: "245 CPR",
-    sub: "After 5% Burn",
+    title: "ROI",
+    value: `$${format3(overview.wallets.roi)}`,
+     sub: "Earnings",
+  },
+  {
+    title: "TOTAL INVESTMENT",
+
+    value: `$${format3(overview.wallets.totalInvested)}`,
+    sub: "All Time",
   },
 ];
 
 
-  const visibleData = showAll ? investments : investments.slice(0, 5);
+  const visibleData = investments && investments.length > 0 
+    ? (showAll ? investments : investments.slice(0, 5)) 
+    : [];
   
 
   return (
@@ -127,99 +206,149 @@ const WalletHero = () => {
 </button>
           </div>
 
-          {/* Cards */}
-          {visibleData.map((item) => {
-            const isActive = item.status === "Active";
+        
+          
+         {/* Cards */}
+{/* Cards */}
+<div className="space-y-3">
+  {investmentsLoading ? (
+    <div className="flex justify-center items-center py-6">
+      <Loader size={24} className="text-blue-400 animate-spin" />
+    </div>
+  ) : !investments || investments.length === 0 ? (
+    <div className="text-center text-gray-500 text-sm py-6">
+      No investments found.
+    </div>
+  ) : (
+    <>
+      {visibleData.map((item) => {
+        const isActive = item?.status === "active";
+        const daysCompleted = Math.min(item?.claimedDays || 0, item?.totalDays || 700);
+        const progress =
+          (daysCompleted / (item?.totalDays || 700)) * 100;
 
-            return (
-              <div
-                key={item.id}
-                className="group rounded-2xl border-2 border-[#444385] mb-4 overflow-hidden"
-              >
-                <div className="bg-[#00000033] p-3 backdrop-blur-[20px]
-                  group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)]
-                  transition-all duration-300">
-
-                  {/* Header */}
-                  <div className="flex justify-between">
-
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-xl ${
-                        isActive ? "bg-blue-500/10" : "bg-green-500/10"
-                      }`}>
-                        {isActive ? (
-                          <Loader size={18} className="text-blue-400 animate-spin" />
-                        ) : (
-                          <CheckCircle size={18} className="text-green-400" />
-                        )}
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Coins size={16} className="text-purple-400" />
-                          <span className="text-white font-semibold text-xs">
-                            {item.package} USDC
-                          </span>
-                        </div>
-
-                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-                          {item.tokens} CPR (+10%)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right text-[10px] flex flex-col items-end gap-1">
-
-  {/* 🔥 Top Row: Time + Status (side by side for Active) */}
-  <div className={`flex items-center gap-2 ${isActive ? "" : "flex-col items-end gap-1"}`}>
-    
-    <p className="text-gray-400">{item.time}</p>
-
-    <span
-      className={`px-2 py-1 rounded-full text-[10px] ${
-        isActive
-          ? "bg-blue-500/20 text-blue-400"
-          : "bg-green-500/20 text-green-400"
-      }`}
-    >
-      {item.status}
-    </span>
-
-  </div>
-
-  {/* ✅ Claim Button (only if Active) */}
-  {isActive && (
-    <button
-      onClick={() => console.log("Claim clicked", item.id)}
-      className="text-[10px] px-2 py-1 rounded-md  mt-1
-      bg-gradient-to-r from-green-400 to-green-600 
-      text-white font-[600] shadow-md hover:opacity-90 transition"
-    >
-      Claim
-    </button>
-  )}
-
-</div>
-
+        return (
+          <div
+            key={item?._id || item?.id}
+            className="group rounded-2xl border border-[#444385] overflow-hidden"
+          >
+            <div
+              className="bg-[#00000033] p-3 backdrop-blur-[20px]
+              group-hover:bg-[linear-gradient(180deg,#020204,#2C6096)]
+              transition-all duration-300"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-1.5 rounded-xl ${
+                      isActive
+                        ? "bg-blue-500/10"
+                        : "bg-green-500/10"
+                    }`}
+                  >
+                    {isActive ? (
+                      <Loader
+                        size={16}
+                        className="text-blue-400 animate-spin"
+                      />
+                    ) : (
+                      <CheckCircle
+                        size={16}
+                        className="text-green-400"
+                      />
+                    )}
                   </div>
 
-                  {/* Body */}
-                  <p className="text-cyan-400 text-sm mt-3">
-                    {item.daily} CPR / day
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Coins size={14} className="text-purple-400" />
+                      <span className="text-white text-sm font-semibold">
+                        {item?.amount || 0} USDT
+                      </span>
+                    </div>
 
-                  <div className="flex justify-between text-xs mt-2 text-gray-400">
-                    <span>Progress</span>
-                    <span className="text-white">
-                      {item.days} / 700 days
+                    <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                     {format3(item?.tokensReceived)}
+                      CPR tokens
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right text-[10px] flex flex-col items-end gap-1">
+                  <div
+                    className={`flex items-center gap-2 ${
+                      isActive
+                        ? ""
+                        : "flex-col items-end gap-1"
+                    }`}
+                  >
+                    <p className="text-gray-400">
+                      {item?.startDate
+                        ? new Date(item.startDate).toLocaleTimeString(
+                            "en-IN",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )
+                        : "—"}
+                    </p>
+
+                    <span
+                      className={`px-2 py-1 rounded-full text-[10px] ${
+                        isActive
+                          ? "bg-blue-500/20 text-blue-400"
+                          : "bg-green-500/20 text-green-400"
+                      }`}
+                    >
+                      {isActive ? "Active" : "Completed"}
                     </span>
                   </div>
 
+                  <p className="text-gray-500 text-[9px]">
+                    {item?.startDate
+                      ? new Date(item.startDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )
+                      : "—"}
+                  </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Body */}
+              <div className="mt-2 flex justify-between items-center">
+                <p className="text-cyan-400 text-sm font-medium">
+                  {format3(item?.dailyIncomeTokens)}
+                  CPR / day
+                </p>
+
+                <p className="text-xs text-gray-400">
+                  {daysCompleted} / {item?.totalDays || 700} days
+                </p>
+              </div>
+
+              {/* Progress */}
+              <div className="w-full h-1.5 bg-[#111] rounded-full mt-2 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#587FFF] to-[#09239F]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  )}
+</div>
+</div>
 
       </div>
     </div>

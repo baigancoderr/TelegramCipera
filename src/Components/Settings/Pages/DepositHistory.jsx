@@ -270,7 +270,7 @@ const totalPages = pagination.pages || 1;
                 bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
                 <div className="rounded-lg bg-[#0B0F1A] backdrop-blur-xl">
                   <div className="overflow-x-auto">
-                    <table className="min-w-[600px] w-full text-sm">
+                    <table className="min-w-[700px] w-full text-sm">
                     
 
                       {/* HEADER */}
@@ -279,6 +279,8 @@ const totalPages = pagination.pages || 1;
                           <th className="px-3 py-3 text-left">#</th>
                           <th className="px-3 py-3 text-left">Txn Hash</th>
                           <th className="px-3 py-3 text-left">Amount</th>
+                          
+                          <th className="px-3 py-3 text-left">Wallet</th>
                           <th className="px-3 py-3 text-left">Method</th>
                           <th className="px-3 py-3 text-left">Date</th>
                           <th className="px-3 py-3 text-right">Status</th>
@@ -327,6 +329,9 @@ const totalPages = pagination.pages || 1;
                               <td className="px-3 py-3 font-medium text-white">
                                 ${item.creditedAmount ?? 0}
                               </td>
+                              <td className="px-3 py-3">
+  <CopyCell value={item.depositAddress} />
+</td>
 
                               {/* Method = currency */}
                               <td className="px-3 py-3 text-gray-300 text-xs uppercase">

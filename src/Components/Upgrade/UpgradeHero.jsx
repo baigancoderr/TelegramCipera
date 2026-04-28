@@ -41,6 +41,22 @@ const UpgradeHero = () => {
 const [amount, setAmount] = useState("25");
 const [loading, setLoading] = useState(false);
 const [tgUser, setTgUser] = useState(null);
+const [overviewLoading, setOverviewLoading] = useState(true);
+const [overview, setOverview] = useState({
+  investments: {
+    totalInvested: 0,
+    totalReceivedTokens: 0,
+    totalClaimedTokens: 0,
+  },
+  wallets: {
+    mainBalance: 0,
+    deposit: 0,
+    referral: 0,
+    roi: 0,
+  },
+  currentTokenPrice: 0,
+  roiInUsd: 0,
+});
 
 useEffect(() => {
   const initTelegram = () => {
@@ -54,6 +70,23 @@ useEffect(() => {
     }
   };
   initTelegram();
+}, []);
+
+useEffect(() => {
+  const fetchOverview = async () => {
+    try {
+      const res = await api.get("/user/overview");
+      console.log("Overview API Response:", res.data);
+      if (res.data.status === "success" || res.data.success) {
+        setOverview(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching overview:", error);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+  fetchOverview();
 }, []);
 
 const getTelegramId = () => {
@@ -179,28 +212,36 @@ const startDate = new Date().toLocaleDateString();
             <div className="group rounded-2xl border-2 border-[#444385] hover:border-transparent overflow-hidden">
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Total Investment</p>
-                <p className="text-emerald-400 text-md font-semibold mt-1">10</p>
+               <p className="text-emerald-400 text-md font-semibold mt-1">
+  {overviewLoading ? "..." : Number(overview?.investments?.totalInvested || 0).toFixed(3)}
+</p>
               </div>
             </div>
 
             <div className="group rounded-2xl border-2 border-[#444385] hover:border-transparent overflow-hidden">
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
-                <p className="text-gray-400 text-sm">Total Tokens</p>
-                <p className="text-emerald-400 text-md font-semibold mt-1">10</p>
+                <p className="text-gray-400 text-sm">Total Locked Tokens</p>
+               <p className="text-emerald-400 text-md font-semibold mt-1">
+  {overviewLoading ? "..." : Number(overview?.investments?.totalReceivedTokens || 0).toFixed(3)}
+</p>
               </div>
             </div>
 
             <div className="group rounded-2xl border-2 border-[#444385] hover:border-transparent overflow-hidden">
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
-                <p className="text-gray-400 text-sm">Total Supply </p>
-                <p className="text-emerald-400 text-md font-semibold mt-1">10</p>
+                <p className="text-gray-400 text-sm">Claimed Token </p>
+               <p className="text-emerald-400 text-md font-semibold mt-1">
+  {overviewLoading ? "..." : Number(overview?.investments?.totalClaimedTokens || 0).toFixed(3)}
+</p>
               </div>
             </div>
 
             <div className="group rounded-2xl border-2 border-[#444385] hover:border-transparent overflow-hidden">
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Burned Supply</p>
-                <p className="text-emerald-400 text-md font-semibold mt-1">10</p>
+              <p className="text-emerald-400 text-md font-semibold mt-1">
+  {Number(0).toFixed(3)}
+</p>
               </div>
             </div>
           </div>
