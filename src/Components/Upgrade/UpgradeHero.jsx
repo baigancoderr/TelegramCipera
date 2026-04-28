@@ -1,5 +1,5 @@
 import { CheckCircle, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DollarSign,
   Wallet,
@@ -22,6 +22,8 @@ import {
   Tooltip,
   Filler,
 } from "chart.js";
+import api from "../../api/axios";
+import toast from "react-hot-toast";
 
 ChartJS.register(
   LineElement,
@@ -37,6 +39,78 @@ const UpgradeHero = () => {
     const navigate = useNavigate();
 
 const [amount, setAmount] = useState("25");
+const [loading, setLoading] = useState(false);
+const [tgUser, setTgUser] = useState(null);
+
+useEffect(() => {
+  const initTelegram = () => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        setTgUser(user);
+      }
+    }
+  };
+  initTelegram();
+}, []);
+
+const getTelegramId = () => {
+  if (tgUser) return tgUser.id;
+  
+  const savedUserId = localStorage.getItem("userId");
+  if (savedUserId) return savedUserId;
+
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user.userId || user._id || user.id;
+    }
+  } catch (e) {
+    console.error("Failed to parse user from localStorage", e);
+  }
+  return null;
+};
+
+const handleInvest = async () => {
+  const telegramId = getTelegramId();
+  const investAmount = Number(amount);
+
+  if (!telegramId) {
+    toast.error("User not found. Please login again.");
+    return;
+  }
+
+  if (!investAmount || investAmount < 25) {
+    toast.error("Minimum investment amount is 25 CPR");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const res = await api.post("/user/plan/invest", {
+      telegramId,
+      amount: investAmount,
+    });
+
+    // Check for success - handle both { success: true } or direct response
+    const isSuccess = res.data?.success === true || res.status === 201 || res.status === 200;
+    
+    if (isSuccess) {
+      toast.success(res.data?.message || "Investment successful!");
+      setAmount("25");
+    } else {
+      toast.error(res.data?.message || "Investment failed");
+    }
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || "Investment failed";
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
 
 const investment = Number(amount) || 0;
 const bonus = investment * 0.1; // 10% bonus example
@@ -45,8 +119,6 @@ const dailyClaim = totalTokens / 700;
 
 const startDate = new Date().toLocaleDateString();
 
- 
-  const userId = "CIP579317981";
    const [activeFilter, setActiveFilter] = useState("1D");
 
   // 🔷 STATS
@@ -139,7 +211,7 @@ const startDate = new Date().toLocaleDateString();
           {/* Deposit Input */}
          <div className="my-6">
       <label className="text-gray-400 text-sm font-medium mb-2 block">
-        Amount For Investment (CPR)
+        Amount For Investment (USDT)
       </label>
 
       <input
@@ -153,7 +225,7 @@ const startDate = new Date().toLocaleDateString();
       />
 
       <p className="text-xs text-gray-500 mt-3 pl-2">
-        Minimum deposit: 25 CPR
+        Minimum deposit: 25 USDT
       </p>
     </div>
     <div className="grid grid-cols-4 gap-3 mb-5">
@@ -190,7 +262,7 @@ const startDate = new Date().toLocaleDateString();
             <div className="flex justify-between">
               <span className="text-gray-400">Invested Amount</span>
               <span className="text-white font-semibold">
-                {investment} CPR
+                {investment} USDT
               </span>
             </div>
 
@@ -226,14 +298,14 @@ const startDate = new Date().toLocaleDateString();
 
           {/* Submit Button */}
           <button 
-            className="w-full py-2 bg-[linear-gradient(45deg,_#587FFF_0%,_#09239F_100%)]
+            onClick={handleInvest}
+            disabled={loading}
+            className="w-full py-2 bg-[linear-gradient(45deg,_#587FFF_0%,_#09239F_100%)] 
                      text-white text-md font-semibold rounded-xl shadow-md 
                      hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-            Invest 
-            {/* <ArrowRight size={20} /> */}
+            {loading ? "Investing..." : "Invest"} 
           </button>
 
-         
         </div>
       </div>
     </div>

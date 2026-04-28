@@ -197,7 +197,7 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
               <div>
                 <p className="text-xs text-gray-400">Referral Wallet</p>
                 <p className="text-lg font-bold">
-                  ${referralBalance ?? 0}
+                ${Number(referralBalance ?? 0).toFixed(3)}
                 </p>
               </div>
             </div>
@@ -210,7 +210,7 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
               <div>
                 <p className="text-xs text-gray-400">ROI Wallet</p>
                 <p className="text-lg font-bold">
-                  ${roiBalance ?? 0}
+                  ${Number(roiBalance ?? 0).toFixed(3)}
                 </p>
               </div>
             </div>

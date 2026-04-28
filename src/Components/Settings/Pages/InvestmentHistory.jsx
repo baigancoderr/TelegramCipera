@@ -134,7 +134,7 @@ const InvestmentHistory = () => {
   </div>
 
   {/* ✅ Claim Button (only if Active) */}
-  {isActive && (
+  {/* {isActive && (
     <button
       onClick={() => console.log("Claim clicked", item.id)}
       className="text-[10px] px-2 py-1 rounded-md  mt-1
@@ -143,7 +143,7 @@ const InvestmentHistory = () => {
     >
       Claim
     </button>
-  )}
+  )} */}
 
 </div>
 
