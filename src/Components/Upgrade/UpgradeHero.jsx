@@ -116,11 +116,6 @@ const handleInvest = async () => {
     return;
   }
 
-  if (!investAmount || investAmount < 25) {
-    toast.error("Minimum investment amount is 25 CPR");
-    return;
-  }
-
   setLoading(true);
   try {
     const res = await api.post("/user/plan/invest", {
