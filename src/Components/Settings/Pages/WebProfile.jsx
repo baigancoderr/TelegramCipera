@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, User, Copy, Share2 } from "lucide-react";
+import { ArrowLeft, User, Copy, Share2,Wallet  } from "lucide-react";
+import { Mail, Pencil, X } from "lucide-react";
 import userimg2 from "../../../assets/setting/user-img.jpeg";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -24,6 +25,8 @@ const fetchMe = async () => {
 const WebProfile = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  {/* Wallet & Email Section */}
+const [activeInfoTab, setActiveInfoTab] = useState("wallet");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +37,10 @@ const WebProfile = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [isEditing, setIsEditing] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [emailEdit, setEmailEdit] = useState("");
+const [isEmailEditing, setIsEmailEditing] = useState(false);
+const [emailSaving, setEmailSaving] = useState(false);
 
   // TanStack Query for /me
   const {
@@ -51,12 +58,25 @@ const WebProfile = () => {
   const showSkeleton = meLoading && !apiUser;
 
   // Sync wallet when user data loads
+  // useEffect(() => {
+  //   if (apiUser?.walletAddress) {
+  //     setWalletAddress(apiUser.walletAddress);
+  //     setIsEditing(false);
+  //   }
+  // }, [apiUser]);
+
   useEffect(() => {
-    if (apiUser?.walletAddress) {
+  if (apiUser) {
+    if (apiUser.walletAddress) {
       setWalletAddress(apiUser.walletAddress);
       setIsEditing(false);
     }
-  }, [apiUser]);
+    if (apiUser.email) {
+      setEmailEdit(apiUser.email);
+      setIsEmailEditing(false);
+    }
+  }
+}, [apiUser]);
 
   // Web Register / Login
   const handleWebSubmit = async (e) => {
@@ -137,6 +157,46 @@ const WebProfile = () => {
       setSaving(false);
     }
   };
+
+  // save email
+const handleSaveEmail = async () => {
+  if (!emailEdit.trim()) {
+    toast.error("Enter email");
+    return;
+  }
+
+  setEmailSaving(true);
+  try {
+    const token = localStorage.getItem("token");
+
+    // Wallet jaisa check — agar pehle se email hai to PUT, nahi to POST
+    const isUpdate = !!apiUser?.email;
+
+    const res = isUpdate
+      ? await api.put(
+          "/user/update-email",
+          { email: emailEdit.toLowerCase() },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      : await api.post(
+          "/user/add-email",
+          { email: emailEdit.toLowerCase() },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+    if (res.data.success) {
+      toast.success(res.data.message || "Email updated");
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      setIsEmailEditing(false);
+    } else {
+      toast.error(res.data.message);
+    }
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to update email");
+  } finally {
+    setEmailSaving(false);
+  }
+};
 
   const handleUpdate = () => setIsEditing(true);
 
@@ -246,33 +306,190 @@ const WebProfile = () => {
           </div>
         </div>
 
-        {/* Wallet Section */}
-        <div className="rounded-xl border border-[#444B55] p-5 bg-[#00000020] mb-6">
-          <p className="text-sm text-gray-300 mb-3">Wallet Address</p>
-          <input
-            type="text"
-            value={walletAddress}
-            disabled={!isEditing}
-            onChange={(e) => setWalletAddress(e.target.value)}
-            placeholder="Enter your wallet address"
-            className={`w-full px-4 py-3 rounded-xl text-sm bg-black border mb-4 ${
-              isEditing ? "border-[#81ECFF]" : "border-[#444B55]"
-            }`}
-          />
-          {isEditing ? (
+
+{/* Wallet + Email Tabbed Section */}
+<div className="rounded-2xl border border-[#444B55] bg-[#00000033] backdrop-blur-[10px] mb-4 overflow-hidden">
+
+  {/* Tab Header */}
+  <div className="flex bg-[#1B2028] border-b border-[#444B55] p-1 gap-1">
+    <button
+      onClick={() => setActiveInfoTab("wallet")}
+      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm rounded-xl transition ${
+        activeInfoTab === "wallet"
+          ? "bg-gradient-to-r from-[#587FFF] to-[#09239F] text-white font-medium"
+          : "text-gray-400 hover:text-white"
+      }`}
+    >
+      <Wallet size={14} />
+      Wallet
+    </button>
+    <button
+      onClick={() => setActiveInfoTab("email")}
+      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm rounded-xl transition ${
+        activeInfoTab === "email"
+          ? "bg-gradient-to-r from-purple-600 to-[#09239F] text-white font-medium"
+          : "text-gray-400 hover:text-white"
+      }`}
+    >
+      <Mail size={14} />
+      Email
+    </button>
+  </div>
+
+  {/* Tab Content */}
+  <div className="px-5 py-4">
+
+    {/* ── WALLET TAB ── */}
+    {activeInfoTab === "wallet" && (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-gray-400">Your Wallet address</p>
+          {!isEditing && (
             <button
-              onClick={handleSaveWallet}
-              disabled={saving}
-              className="w-full py-3 bg-gradient-to-r from-[#587FFF] to-[#09239F] rounded-xl disabled:opacity-50"
+              onClick={handleUpdate}
+              className="flex items-center gap-1.5 text-xs text-blue-400 border border-blue-400/30 bg-blue-400/10 px-3 py-1.5 rounded-full hover:bg-blue-400/20 transition"
             >
-              {saving ? "Saving..." : apiUser.walletAddress ? "Update Wallet" : "Save Wallet"}
-            </button>
-          ) : (
-            <button onClick={handleUpdate} className="w-full py-3 bg-green-600 rounded-xl">
-              Edit Wallet
+              <Pencil size={11} /> Edit
             </button>
           )}
         </div>
+
+        {isEditing ? (
+          <>
+            <div className="relative">
+              <input
+                type="text"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="Enter your wallet address"
+                className="w-full px-4 py-3 pr-10 rounded-xl text-sm bg-black border border-[#81ECFF] text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#81ECFF]/40"
+              />
+              {walletAddress && (
+                <button
+                  onClick={() => setWalletAddress("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setWalletAddress(apiUser?.walletAddress || "");
+                  setIsEditing(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm border border-[#444385] text-gray-400 hover:bg-white/5 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveWallet}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl text-sm bg-gradient-to-r from-[#587FFF] to-[#09239F] text-white font-medium disabled:opacity-50 active:scale-95 transition"
+              >
+                {saving ? "Saving..." : apiUser?.walletAddress ? "Update" : "Save"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-3 bg-black/40 border border-[#ffffff10] rounded-xl px-4 py-3">
+            <p className="text-sm text-gray-300 break-all flex-1  leading-relaxed">
+              {walletAddress || <span className="text-gray-600 italic">Not set yet</span>}
+            </p>
+            {walletAddress && (
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(walletAddress);
+                  toast.success("Wallet address copied!");
+                }}
+                className="shrink-0 text-gray-500 hover:text-blue-400 transition"
+              >
+                <Copy size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* ── EMAIL TAB ── */}
+    {activeInfoTab === "email" && (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-gray-400">Your Email address</p>
+          {!isEmailEditing && (
+            <button
+              onClick={() => setIsEmailEditing(true)}
+              className="flex items-center gap-1.5 text-xs text-purple-400 border border-purple-400/30 bg-purple-400/10 px-3 py-1.5 rounded-full hover:bg-purple-400/20 transition"
+            >
+              <Pencil size={11} /> Edit
+            </button>
+          )}
+        </div>
+
+        {isEmailEditing ? (
+          <>
+            <div className="relative">
+              <input
+                type="email"
+                value={emailEdit}
+                onChange={(e) => setEmailEdit(e.target.value)}
+                placeholder="Enter email address"
+                className="w-full px-4 py-3 pr-10 rounded-xl text-sm bg-black border border-purple-400/60 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-400/40"
+              />
+              {emailEdit && (
+                <button
+                  onClick={() => setEmailEdit("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setEmailEdit(apiUser?.email || "");
+                  setIsEmailEditing(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm border border-[#444385] text-gray-400 hover:bg-white/5 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEmail}
+                disabled={emailSaving}
+                className="flex-1 py-2.5 rounded-xl text-sm bg-gradient-to-r from-purple-600 to-[#09239F] text-white font-medium disabled:opacity-50 active:scale-95 transition"
+              >
+               {emailSaving ? "Saving..." : apiUser?.email ? "Update" : "Save"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-3 bg-black/40 border border-[#ffffff10] rounded-xl px-4 py-3">
+            <p className="text-sm text-gray-300 break-all flex-1">
+              {emailEdit || <span className="text-gray-600 italic">Not set yet</span>}
+            </p>
+            {emailEdit && (
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(emailEdit);
+                  toast.success("Email copied!");
+                }}
+                className="shrink-0 text-gray-500 hover:text-purple-400 transition"
+              >
+                <Copy size={17} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+
+  </div>
+</div>
+      
 
         {/* Referral Section */}
         <div className="rounded-xl border border-[#444B55] p-5 bg-[#00000020]">

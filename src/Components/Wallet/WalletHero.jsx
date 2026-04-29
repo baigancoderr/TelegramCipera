@@ -96,23 +96,23 @@ const WalletHero = () => {
   const walletData = [
   {
     title: "DEPOSIT",
-    value: `$${format3(overview.wallets.deposit)}`,
+    value: `${format3(overview.wallets.deposit)}`,
     sub: "Wallet Balance",
   },
   {
     title: "REFERRAL",
-    value: `$${format3(overview.wallets.referral)}`,
+    value: `${format3(overview.wallets.referral)}`,
     sub: "Earnings",
   },
   {
     title: "ROI",
-    value: `$${format3(overview.wallets.roi)}`,
+    value: `${format3(overview.wallets.roi)}`,
      sub: "Earnings",
   },
   {
     title: "TOTAL INVESTMENT",
 
-    value: `$${format3(overview.wallets.totalInvested)}`,
+    value: `${format3(overview.investments.totalInvested)}`,
     sub: "All Time",
   },
 ];
