@@ -45,7 +45,7 @@ const [overviewLoading, setOverviewLoading] = useState(true);
 const [overview, setOverview] = useState({
   investments: {
     totalInvested: 0,
-    totalReceivedTokens: 0,
+    totalReturnTokens: 0,
     totalClaimedTokens: 0,
   },
   wallets: {
@@ -222,7 +222,7 @@ const startDate = new Date().toLocaleDateString();
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Total Locked Tokens</p>
                <p className="text-emerald-400 text-md font-semibold mt-1">
-  {overviewLoading ? "..." : Number(overview?.investments?.totalReceivedTokens || 0).toFixed(3)}
+  {overviewLoading ? "..." : Number(overview?.investments?.totalReturnTokens || 0).toFixed(3)}
 </p>
               </div>
             </div>

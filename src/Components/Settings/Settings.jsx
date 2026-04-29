@@ -82,6 +82,12 @@ const SettingsComponent = () => {
       action: () => navigate("/settings/deposit-history"),
     },
     {
+      icon: <Download size={18} />,
+      title: "Swap to Deposit",
+      subtitle: "Convert ROI / Referral to deposit",
+      action: () => navigate("/settings/swap-deposit"),
+    },
+    {
       icon: <Wallet size={18} />,
       title: "Withdraw USDT",
       subtitle: "Transfer funds",

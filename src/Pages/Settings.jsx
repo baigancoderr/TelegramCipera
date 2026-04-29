@@ -13,6 +13,8 @@ import ReferralEarningsHistory from "../Components/Settings/Pages/ReferralEarnin
 import DepositHistory from "../Components/Settings/Pages/DepositHistory";
 import WithdrawUsdt from "../Components/Settings/Pages/WithdrawUsdt";
 import WebProfile from "../Components/Settings/Pages/WebProfile";
+import SwapDeposit from "../Components/Settings/Pages/SwapDeposit";
+
 const Settings = () => {
   const location = useLocation();
   const [page, setPage] = useState("settings");
@@ -40,6 +42,8 @@ useEffect(() => {
   setPage("ReferralEarningsHistory");
     }else if (location.pathname.includes("referral")) {
     setPage("Referral");}
+    else if (location.pathname.includes("swap-deposit")) {
+    setPage("SwapDeposit");}
 
 // else if (location.pathname.includes("profile")) {
 //     setPage("Profile");
@@ -68,6 +72,7 @@ useEffect(() => {
       {page === "ReferralEarningsHistory" && <ReferralEarningsHistory />}
       {page === "DepositHistory" && <DepositHistory />}
       {page === "WithdrawUsdt" && <WithdrawUsdt />}
+      {page === "SwapDeposit" && <SwapDeposit />}
 
 
       <Footer />

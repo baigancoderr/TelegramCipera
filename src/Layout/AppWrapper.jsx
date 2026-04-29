@@ -69,6 +69,7 @@ if (!ALLOW_BROWSER) {
         <Route path="/settings/faqs" element={<Settings />} />
         <Route path="/settings/privacy" element={<Settings />} />
         <Route path="/settings/term-condition" element={<Settings />} />
+         <Route path="/settings/swap-deposit" element={<Settings />} />
         
       </Routes>
     </>
