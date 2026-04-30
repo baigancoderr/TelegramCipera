@@ -143,13 +143,13 @@ const InvestmentHistory = () => {
             <div>
               <p className="text-gray-400 text-xs">Total Return Tokens</p>
               <p className="text-emerald-400 font-semibold text-sm mt-0.5">
-                {summary.totalReturnTokens.toFixed(4)} CPR
+                {summary.totalReturnTokens.toFixed(4)} CIP
               </p>
             </div>
             <div>
               <p className="text-gray-400 text-xs">Claimed Tokens</p>
               <p className="text-cyan-400 font-semibold text-sm mt-0.5">
-                {summary.totalClaimedTokens.toFixed(4)} CPR
+                {summary.totalClaimedTokens.toFixed(4)} CIP
               </p>
             </div>
           </div>
@@ -226,7 +226,7 @@ const InvestmentHistory = () => {
                             </span>
                           </div>
                           <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-                            {item.tokensReceived?.toFixed(2)} CPR tokens
+                            {item.tokensReceived?.toFixed(2)} CIP tokens
                           </span>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ const InvestmentHistory = () => {
                     {/* BODY */}
                     <div className="mt-3 flex justify-between items-center">
                       <p className="text-cyan-400 text-sm font-medium">
-                        {item.dailyIncomeTokens?.toFixed(4)} CPR / day
+                        {item.dailyIncomeTokens?.toFixed(4)} CIP / day
                       </p>
                       <p className="text-xs text-gray-400">
                         {daysCompleted} / {item.totalDays} days
@@ -258,7 +258,7 @@ const InvestmentHistory = () => {
 
                     {/* EXTRA INFO */}
                     <div className="mt-2 flex justify-between text-[10px] text-gray-500">
-                      <span>Total Return: <span className="text-emerald-400">{item.totalReturnTokens?.toFixed(4)} CPR</span></span>
+                      <span>Total Return: <span className="text-emerald-400">{item.totalReturnTokens?.toFixed(4)} CIP</span></span>
                       <span>Ends: {formatDate(item.endDate)}</span>
                     </div>
 

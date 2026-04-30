@@ -39,18 +39,18 @@ const SettingsComponent = () => {
 }, []);
 
   const menuItems = [
-    // {
-    //   icon: <User size={18} />,
-    //   title: "Account",
-    //   subtitle: "Security, change number",
-    //   action: () => navigate("/settings/profile"),
-    // },
-       {
+    {
       icon: <User size={18} />,
       title: "Account",
       subtitle: "Security, change number",
-      action: () => navigate("/settings/WebProfile"),
+      action: () => navigate("/settings/profile"),
     },
+    //    {
+    //   icon: <User size={18} />,
+    //   title: "Account",
+    //   subtitle: "Security, change number",
+    //   action: () => navigate("/settings/WebProfile"),
+    // },
     {
       icon: <Users size={18} />,
       title: "My Referrals",
@@ -80,6 +80,12 @@ const SettingsComponent = () => {
       title: "Deposit History",
       subtitle: "All transactions",
       action: () => navigate("/settings/deposit-history"),
+    },
+    {
+      icon: <Download size={18} />,
+      title: "Swap to Deposit",
+      subtitle: "Convert ROI / Referral to deposit",
+      action: () => navigate("/settings/swap-deposit"),
     },
     {
       icon: <Wallet size={18} />,

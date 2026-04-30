@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, User, Wallet, Send, ChevronDown } from "lucide-react";
+import { ArrowLeft, User, Wallet, Send, ChevronDown,Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
@@ -17,7 +17,14 @@ const WithdrawUSDT = () => {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [walletType, setWalletType] = useState("referral");
+  const [showOtpField, setShowOtpField] = useState(false);
+  const [otp, setOtp] = useState("");
 
+
+  const handleCopy = (text) => {
+  navigator.clipboard.writeText(text);
+  toast.success("Copied ");
+};
 
  const handleWithdraw = () => {
   if (!walletType || !amount || !address) {
@@ -25,12 +32,22 @@ const WithdrawUSDT = () => {
   }
 
   if (amount < 5) {
-    return toast.error("Minimum withdrawal is 5 USDC ");
+    return toast.error("Minimum withdrawal is 5");
+  }
+  
+
+  // First request OTP
+  requestOtpMutation.mutate();
+};
+
+const handleConfirmWithdraw = () => {
+  if (!otp || otp.length < 4) {
+    return toast.error("Please enter valid OTP");
   }
 
   if (withdrawMutation.isPending) return;
 
-  withdrawMutation.mutate();
+  withdrawMutation.mutate({ otp });
 };
 
   useEffect(() => {
@@ -74,6 +91,24 @@ const WithdrawUSDT = () => {
   return res.data.data.withdrawals;
 };
 
+const fetchUserOverview = async () => {
+  const res = await api.get("/user/overview");
+  if (res.data.status === "success" || res.data.success) {
+    return res.data.data;
+  }
+  throw new Error(res.data.message || "Failed to load overview");
+};
+
+const {
+  data: overviewData,
+  isLoading: overviewLoading,
+} = useQuery({
+  queryKey: ["user-overview"],
+  queryFn: fetchUserOverview,
+  staleTime: 1000 * 60,
+  cacheTime: 1000 * 60 * 5,
+  refetchOnWindowFocus: true,
+});
 
 const {
   data: withdrawHistory = [],
@@ -90,8 +125,52 @@ const {
 
 const queryClient = useQueryClient();
 
-const withdrawMutation = useMutation({
+useEffect(() => {
+  if (overviewData?.wallets) {
+    setReferralBalance(overviewData.wallets.referral || 0);
+    setRoiBalance(overviewData.wallets.roi || 0);
+  }
+
+  if (overviewData?.walletAddress) {
+    setAddress(overviewData.walletAddress);
+  }
+}, [overviewData]);
+
+// Request OTP Mutation
+const requestOtpMutation = useMutation({
   mutationFn: async () => {
+    const token = localStorage.getItem("token");
+    const res = await api.post(
+      "/user/request-withdrawal-otp",
+        {
+        walletType,             
+        amount: Number(amount), 
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return res.data;
+  },
+  onSuccess: (data) => {
+    console.log("OTP Response:", data);
+    if (data.success || data.status === "success") {
+      toast.success(data.message || "OTP sent to your registered email/phone");
+      setShowOtpField(true);
+    } else {
+      toast.error(data.message || "Failed to send OTP");
+    }
+  },
+  onError: (err) => {
+    console.log("OTP Error:", err);
+    toast.error(err?.response?.data?.message || "Error sending OTP");
+  },
+});
+
+const withdrawMutation = useMutation({
+  mutationFn: async (otpCode) => {
     const token = localStorage.getItem("token");
 
     const res = await api.post(
@@ -100,6 +179,7 @@ const withdrawMutation = useMutation({
         amount: Number(amount),
         walletType,
         walletAddress: address,
+        otp,
       },
       {
         headers: {
@@ -112,28 +192,33 @@ const withdrawMutation = useMutation({
   },
 
  onSuccess: (data) => {
-  if (data.success) {
-    toast.success(data.message || "Withdraw Success ✅");
+    console.log("Withdraw Response:", data);
+    if (data.success || data.status === "success") {
+      toast.success(data.message || "Withdraw Success ✅");
+      setAmount("");
+      setShowOtpField(false);
+      setOtp("");
 
-    setAmount("");
+      // Refresh wallet balances from API
+      queryClient.invalidateQueries({ queryKey: ["user-overview"] });
+      
+      // Also update local state
+      if (data.data?.balances) {
+        setReferralBalance(data.data.balances.referral);
+        setRoiBalance(data.data.balances.roi);
 
-    if (data.data?.balances) {
-      setReferralBalance(data.data.balances.referral);
-      setRoiBalance(data.data.balances.roi);
-
-      // 🔥 UPDATE LOCAL STORAGE
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user) {
-        user.wallets.referral.amount = data.data.balances.referral;
-        user.wallets.roi.amount = data.data.balances.roi;
-        localStorage.setItem("user", JSON.stringify(user));
+        // UPDATE LOCAL STORAGE
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user) {
+          user.wallets.referral.amount = data.data.balances.referral;
+          user.wallets.roi.amount = data.data.balances.roi;
+          localStorage.setItem("user", JSON.stringify(user));
+        }
       }
-    }
 
-    queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
-  }
- else {
-      toast.error(data.message || "Failed ");
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
+    } else {
+      toast.error(data.message || "Failed");
     }
   },
 
@@ -155,7 +240,8 @@ const withdrawMutation = useMutation({
       // Mapping
 const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) => ({
   id: item.transactionHash,
-  amount: `$${item.amount}`,
+  amount: `${item.amount}`,
+  walletType: item.walletType,
   address: item.walletAddress,
   date: new Date(item.createdAt).toLocaleDateString(),
   status: item.status,
@@ -208,9 +294,9 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
             <div className="flex gap-3 items-center">
               <Wallet size={18} />
               <div>
-                <p className="text-xs text-gray-400">ROI Wallet</p>
+                <p className="text-xs text-gray-400">ROI Wallet (CIP)</p>
                 <p className="text-lg font-bold">
-                  ${Number(roiBalance ?? 0).toFixed(3)}
+                  {Number(roiBalance ?? 0).toFixed(3)}
                 </p>
               </div>
             </div>
@@ -258,7 +344,7 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
               <label className="text-xs text-[#81ECFF]">Amount</label>
               <input
                 type="number"
-                placeholder="Enter amount (min 5 USDC)"
+                placeholder={walletType === "roi" ? "Enter Token (Min 5 CIP)" : "Enter amount (min 5 USDC)"}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full mt-1 px-3 py-2 rounded-lg 
@@ -281,18 +367,34 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
               />
             </div>
 
+            {/* ✅ OTP Field - Show after requesting OTP */}
+            {showOtpField && (
+              <div>
+                <label className="text-xs text-[#81ECFF]">Enter OTP</label>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 rounded-lg 
+              bg-[#00000033] border border-[#444B55] text-white
+              focus:outline-none focus:ring-2 focus:ring-[#587FFF]"
+                />
+              </div>
+            )}
+
             {/* ✅ Button */}
             <button
-              onClick={handleWithdraw}
-           disabled={withdrawMutation.isPending}
+              onClick={showOtpField ? handleConfirmWithdraw : handleWithdraw}
+              disabled={withdrawMutation.isPending || requestOtpMutation.isPending}
               className={`w-full py-3 rounded-full
   bg-gradient-to-r from-[#587FFF] to-[#09239F]
   flex items-center justify-center gap-2
-  ${withdrawMutation.isPending ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
+  ${withdrawMutation.isPending || requestOtpMutation.isPending ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
   transition`}
             >
               <Send size={16} />
-             {withdrawMutation.isPending ? "Processing..." : "Withdraw Now"}
+             {withdrawMutation.isPending ? "Processing..." : requestOtpMutation.isPending ? "Sending OTP..." : showOtpField ? "Confirm Withdraw" : "Withdraw Now"}
             </button>
 
           </div>
@@ -356,12 +458,29 @@ bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
 
                 {/* TXN ID */}
                 <td className="px-3 py-3 text-white">
-                  {item.id}
-                </td>
+  <div className="flex items-center gap-2">
+
+    {/* Short Hash */}
+    <span>
+      {item.id ? `${item.id.slice(0, 10)}...` : "-"}
+    </span>
+
+    {/* Copy Button */}
+    {item.id && (
+      <button
+        onClick={() => handleCopy(item.id)}
+        className="text-gray-400 hover:text-blue-400 transition"
+      >
+        <Copy size={14} />
+      </button>
+    )}
+
+  </div>
+</td>
 
                 {/* AMOUNT */}
                 <td className="px-3 py-3 text-white">
-                  {item.amount}
+                  {item.walletType === "roi" ? `${item.amount} CIP` : `$${item.amount}`}
                 </td>
 
                 {/* ADDRESS */}
@@ -376,17 +495,22 @@ bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
 
                 {/* STATUS */}
                 <td className="px-3 py-3 text-right">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium
-                    ${item.status === "success" || item.status === "Success"
-                        ? "bg-green-500/20 text-green-300"
-                        : item.status === "pending"
-                          ? "bg-yellow-500/20 text-yellow-300"
-                          : "bg-red-500/20 text-red-300"
-                      }`}
-                  >
-                    {item.status}
-                  </span>
+                  {(() => {
+                    const normalizedStatus = String(item.status || "").toLowerCase();
+                    const isSuccess = normalizedStatus === "success" || normalizedStatus === "completed" || normalizedStatus === "complete";
+                    const isPending = normalizedStatus === "pending" || normalizedStatus === "in progress" || normalizedStatus === "processing";
+                    const statusClass = isSuccess
+                      ? "bg-green-500/20 text-green-300"
+                      : isPending
+                        ? "bg-yellow-500/20 text-yellow-300"
+                        : "bg-red-500/20 text-red-300";
+
+                    return (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClass}`}>
+                        {item.status}
+                      </span>
+                    );
+                  })()}
                 </td>
 
               </tr>

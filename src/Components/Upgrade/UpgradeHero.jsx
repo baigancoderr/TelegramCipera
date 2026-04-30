@@ -45,7 +45,7 @@ const [overviewLoading, setOverviewLoading] = useState(true);
 const [overview, setOverview] = useState({
   investments: {
     totalInvested: 0,
-    totalReceivedTokens: 0,
+    totalReturnTokens: 0,
     totalClaimedTokens: 0,
   },
   wallets: {
@@ -116,6 +116,11 @@ const handleInvest = async () => {
     return;
   }
 
+  if (!investAmount || investAmount < 25) {
+    toast.error("Minimum investment amount is 25 CPR");
+    return;
+  }
+
   setLoading(true);
   try {
     const res = await api.post("/user/plan/invest", {
@@ -141,9 +146,10 @@ const handleInvest = async () => {
 };
 
 const investment = Number(amount) || 0;
-const bonus = investment * 0.1; // 10% bonus example
-const totalTokens = investment + bonus;
-const dailyClaim = totalTokens / 700;
+const currentPrice = overview.currentTokenPrice || 1;
+const tokensReceived = investment / currentPrice;
+const totalReturn = tokensReceived * 1.1;
+const dailyClaim = totalReturn / 700;
 
 const startDate = new Date().toLocaleDateString();
 
@@ -208,7 +214,7 @@ const startDate = new Date().toLocaleDateString();
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Total Investment</p>
                <p className="text-emerald-400 text-md font-semibold mt-1">
-  {overviewLoading ? "..." : Number(overview?.investments?.totalInvested || 0).toFixed(3)}
+ ${overviewLoading ? "..." : Number(overview?.investments?.totalInvested || 0).toFixed(3)}
 </p>
               </div>
             </div>
@@ -217,7 +223,7 @@ const startDate = new Date().toLocaleDateString();
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Total Locked Tokens</p>
                <p className="text-emerald-400 text-md font-semibold mt-1">
-  {overviewLoading ? "..." : Number(overview?.investments?.totalReceivedTokens || 0).toFixed(3)}
+  {overviewLoading ? "..." : Number(overview?.investments?.totalReturnTokens || 0).toFixed(3)} CIP
 </p>
               </div>
             </div>
@@ -226,7 +232,7 @@ const startDate = new Date().toLocaleDateString();
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
                 <p className="text-gray-400 text-sm">Claimed Token </p>
                <p className="text-emerald-400 text-md font-semibold mt-1">
-  {overviewLoading ? "..." : Number(overview?.investments?.totalClaimedTokens || 0).toFixed(3)}
+  {overviewLoading ? "..." : Number(overview?.investments?.totalClaimedTokens || 0).toFixed(3)} CIP
 </p>
               </div>
             </div>
@@ -247,7 +253,7 @@ const startDate = new Date().toLocaleDateString();
           {/* Deposit Input */}
          <div className="my-6">
       <label className="text-gray-400 text-sm font-medium mb-2 block">
-        Amount For Investment (USDT)
+        Amount For Investment (USDC)
       </label>
 
       <input
@@ -261,7 +267,7 @@ const startDate = new Date().toLocaleDateString();
       />
 
       <p className="text-xs text-gray-500 mt-3 pl-2">
-        Minimum deposit: 25 USDT
+        Minimum deposit: 25 USDC
       </p>
     </div>
     <div className="grid grid-cols-4 gap-3 mb-5">
@@ -298,14 +304,21 @@ const startDate = new Date().toLocaleDateString();
             <div className="flex justify-between">
               <span className="text-gray-400">Invested Amount</span>
               <span className="text-white font-semibold">
-                {investment} USDT
+                {investment} USDC
               </span>
             </div>
 
             <div className="flex justify-between">
-              <span className="text-gray-400">Total Tokens (bonus)</span>
+              <span className="text-gray-400">Tokens Received</span>
+              <span className="text-white font-semibold">
+                {tokensReceived.toFixed(2)} CIP
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-gray-400">Total Tokens (with 10% bonus)</span>
               <span className="text-emerald-400 font-semibold">
-                {totalTokens.toFixed(2)} CPR
+                {totalReturn.toFixed(2)} CIP
               </span>
             </div>
 
@@ -322,7 +335,7 @@ const startDate = new Date().toLocaleDateString();
             <div className="flex justify-between">
               <span className="text-gray-400">Daily Claim Value</span>
               <span className="text-cyan-400 font-semibold">
-                {dailyClaim.toFixed(4)} CPR
+                {dailyClaim.toFixed(4)} CIP
               </span>
             </div>
 

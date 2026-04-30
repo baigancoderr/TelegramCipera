@@ -12,7 +12,9 @@ import bgImg from "../assets/bgImg.png";
 import ReferralEarningsHistory from "../Components/Settings/Pages/ReferralEarningsHistory";
 import DepositHistory from "../Components/Settings/Pages/DepositHistory";
 import WithdrawUsdt from "../Components/Settings/Pages/WithdrawUsdt";
-import WebProfile from "../Components/Settings/Pages/WebProfile";
+// import WebProfile from "../Components/Settings/Pages/WebProfile";
+import SwapDeposit from "../Components/Settings/Pages/SwapDeposit";
+
 const Settings = () => {
   const location = useLocation();
   const [page, setPage] = useState("settings");
@@ -40,13 +42,15 @@ useEffect(() => {
   setPage("ReferralEarningsHistory");
     }else if (location.pathname.includes("referral")) {
     setPage("Referral");}
+    else if (location.pathname.includes("swap-deposit")) {
+    setPage("SwapDeposit");}
 
-// else if (location.pathname.includes("profile")) {
-//     setPage("Profile");
-//   }
-  else if (location.pathname.includes("WebProfile")) {
-    setPage("WebProfile");
+else if (location.pathname.includes("profile")) {
+    setPage("Profile");
   }
+  // else if (location.pathname.includes("WebProfile")) {
+  //   setPage("WebProfile");
+  // }
   else {
     setPage("settings");  
   }
@@ -63,11 +67,12 @@ useEffect(() => {
       {page === "TermCondition" && <TermCondition />}
       {page === "InvestmentHistory" && <InvestmentHistory />}
       {page === "Referral" && <Referral />}
-      {/* {page === "Profile" && <Profile />} */}
-        {page === "WebProfile" && <WebProfile />}
+      {page === "Profile" && <Profile />}
+        {/* {page === "WebProfile" && <WebProfile />} */}
       {page === "ReferralEarningsHistory" && <ReferralEarningsHistory />}
       {page === "DepositHistory" && <DepositHistory />}
       {page === "WithdrawUsdt" && <WithdrawUsdt />}
+      {page === "SwapDeposit" && <SwapDeposit />}
 
 
       <Footer />

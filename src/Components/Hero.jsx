@@ -37,9 +37,11 @@ ChartJS.register(
 );
 
 const HomeDashboard = () => {
-  const [activeFilter, setActiveFilter] = useState("1D");
+  // const [activeFilter, setActiveFilter] = useState("1D");
   const [deposits, setDeposits] = useState([]);
   const [depositsLoading, setDepositsLoading] = useState(true);
+  const [chartFilter, setChartFilter] = useState("1W");
+const [investmentChartData, setInvestmentChartData] = useState(null);
   // const [dashboardData, setDashboardData] = useState(null);
   // const [loading, setLoading] = useState(true);
   // const [error, setError] = useState(null);
@@ -96,6 +98,23 @@ const HomeDashboard = () => {
 
     fetchDeposits();
   }, []);
+  useEffect(() => {
+  const fetchInvestments = async () => {
+    try {
+      const res = await api.get("/user/investments", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (res.data.status === "success") {
+        setInvestmentChartData(res.data.data.investments);
+      }
+    } catch (error) {
+      console.error("Error fetching investments:", error);
+    }
+  };
+  fetchInvestments();
+}, []);
 
   // Icon Mapping (Backend does not send icons)
   const getIcon = (title) => {
@@ -174,53 +193,110 @@ const {
   }
 };
 
-  // Chart Data (Static for now - you can make it dynamic later)
-  const chartDataset = {
-    "1H": [2, 5, 3, 6, 4, 7, 5, 6],
-    "1D": [20, 40, 30, 60, 50, 70, 55],
-    "1W": [100, 200, 150, 300, 250, 400, 350],
-    "1M": [500, 700, 600, 900, 800, 1100, 1000],
-    "1Y": [2000, 3000, 2500, 4000, 3500, 5000, 4500],
-  };
 
-  const labelsMap = {
-    "1H": ["1PM", "2PM", "3PM", "4PM", "5PM", "6PM", "7PM", "8PM"],
-    "1D": ["6AM", "9AM", "12PM", "3PM", "6PM", "9PM", "12AM"],
-    "1W": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    "1M": ["W1", "W2", "W3", "W4"],
-    "1Y": ["Jan", "Mar", "May", "Jul", "Sep", "Nov"],
-  };
 
-  const chartOptions = {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: "#888" }, grid: { display: false } },
-      y: { ticks: { color: "#888" }, grid: { color: "#1f1f2e" } },
-    },
-  };
+const buildChartData = (investments, filter) => {
+  if (!investments || investments.length === 0) {
+    return { labels: [], data: [] };
+  }
 
-  const chartData = {
-    labels: labelsMap[activeFilter],
-    datasets: [
-      {
-        data: chartDataset[activeFilter],
-        borderColor: "#587FFF",
-        tension: 0.4,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointBackgroundColor: "#fff",
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-          gradient.addColorStop(0, "rgba(88,127,255,0.5)");
-          gradient.addColorStop(1, "rgba(88,127,255,0)");
-          return gradient;
-        },
+  const now = new Date();
+  let points = [];
+
+  if (filter === "1W") {
+    // Last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const label = d.toLocaleDateString("en-IN", { weekday: "short" });
+      const total = investments
+        .filter(inv => new Date(inv.startDate) <= d)
+        .reduce((sum, inv) => sum + inv.amount, 0);
+      points.push({ label, total });
+    }
+  } else if (filter === "1M") {
+    // Last 4 weeks
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i * 7);
+      const label = `W${4 - i}`;
+      const total = investments
+        .filter(inv => new Date(inv.startDate) <= d)
+        .reduce((sum, inv) => sum + inv.amount, 0);
+      points.push({ label, total });
+    }
+  } else if (filter === "1Y") {
+    // Last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString("en-IN", { month: "short" });
+      const total = investments
+        .filter(inv => new Date(inv.startDate) <= new Date(d.getFullYear(), d.getMonth() + 1, 0))
+        .reduce((sum, inv) => sum + inv.amount, 0);
+      points.push({ label, total });
+    }
+  }
+
+  return {
+    labels: points.map(p => p.label),
+    data: points.map(p => p.total),
+  };
+};
+
+
+
+ const { labels: chartLabels, data: chartValues } = 
+  buildChartData(investmentChartData, chartFilter);
+
+const chartData = {
+  labels: chartLabels,
+  datasets: [
+    {
+      data: chartValues,
+      borderColor: "#587FFF",
+      tension: 0.4,
+      fill: true,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      pointBackgroundColor: "#587FFF",
+      backgroundColor: (context) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0, "rgba(88,127,255,0.4)");
+        gradient.addColorStop(1, "rgba(88,127,255,0)");
+        return gradient;
       },
-    ],
-  };
+    },
+  ],
+};
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => `$${ctx.parsed.y.toFixed(2)}`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: { color: "#888", font: { size: 11 } },
+      grid: { display: false },
+    },
+    y: {
+      ticks: {
+        color: "#888",
+        font: { size: 11 },
+        callback: (val) => `$${val}`,
+      },
+      grid: { color: "#1f1f2e" },
+    },
+  },
+};
+
+
 
   // Loading State
 if (isLoading) {
@@ -241,12 +317,13 @@ const stats = dashboard.stats
   .filter(
     (item) =>
       item.title !== "ACTIVE PACKAGE" &&
-      item.title !== "ROI EARNINGS"
+    item.title !== "WALLET BALANCE" &&
+    item.title !== "ROI EARNINGS"
   )
   .map((item) => ({
     ...item,
     value:
-      item.title === "LIVE PRICE (SGN)"
+      item.title === "LIVE PRICE (CIP)"
         ? `$${dashboard.tokenPrice}`
         : item.value,
   }));
@@ -309,34 +386,46 @@ const stats = dashboard.stats
         </motion.div>
 
         {/* CHART */}
-        <motion.div
-          className="rounded-2xl border-2 border-[#444385] overflow-hidden"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
+       <motion.div
+  className="rounded-2xl border-2 border-[#444385] overflow-hidden"
+  initial={{ y: 20, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  transition={{ delay: 0.3 }}
+>
+  <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-gray-300 text-sm">Investment Overview</p>
+      <p className="text-blue-400 text-sm font-semibold">
+        ${investmentChartData?.reduce((s, i) => s + i.amount, 0) || 0} total
+      </p>
+    </div>
+
+    {chartLabels.length === 0 ? (
+      <div className="h-[200px] flex items-center justify-center text-gray-500 text-sm">
+        No investment data
+      </div>
+    ) : (
+      <Line data={chartData} options={chartOptions} />
+    )}
+
+    <div className="flex justify-between mt-4">
+      {["1W", "1M", "1Y"].map((item) => (
+        <button
+          key={item}
+          onClick={() => setChartFilter(item)}
+          className={`text-xs px-4 py-2 rounded-full transition-all active:scale-95 ${
+            chartFilter === item
+              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+              : "text-gray-400 hover:bg-gray-700"
+          }`}
         >
-          <div className="bg-[#00000033] p-4 backdrop-blur-[20px]">
-            <p className="text-gray-300 text-sm mb-3">Investment Overview</p>
+          {item}
+        </button>
+      ))}
+    </div>
+  </div>
+</motion.div>
 
-            <Line data={chartData} options={chartOptions} />
-
-            <div className="flex justify-between mt-4">
-              {["1H", "1D", "1W", "1M", "1Y"].map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setActiveFilter(item)}
-                  className={`text-xs px-3 py-2 rounded-full transition-all active:scale-95 ${
-                    activeFilter === item
-                      ? "bg-blue-500/20 text-blue-400"
-                      : "text-gray-400 hover:bg-gray-700"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
 
         {/* REFERRAL LINK */}
         <motion.div

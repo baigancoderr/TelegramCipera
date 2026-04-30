@@ -23,15 +23,15 @@ const AddFundPage = () => {
 
   // ✅ Only your 5 required networks
   const networks = [
-    { label: "ERC20 USDT",     value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
-    { label: "Base USDT",      value: "BASE_USDT",    icon: usdt, coin: "USDT" },
+    // { label: "ERC20 USDT",     value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
+    // { label: "Base USDT",      value: "BASE_USDT",    icon: usdt, coin: "USDT" },
     { label: "Base USDC",      value: "BASE_USDC",    icon: usdc, coin: "USDC" },
     // { label: "ETH USDT",       value: "WEB20_USDT",   icon: usdt, coin: "USDT" },
-    { label: "Polygon USDT",   value: "POLYGON_USDT", icon: usdt, coin: "USDT" },
+    // { label: "Polygon USDT",   value: "POLYGON_USDT", icon: usdt, coin: "USDT" },
     { label: "BEP20 USDT",     value: "BEP20_USDT",   icon: usdt, coin: "USDT" }
   ];
 
-  const [selectedNetwork, setSelectedNetwork] = useState("WEB20_USDT");
+  const [selectedNetwork, setSelectedNetwork] = useState("BASE_USDC");
 
   // Get UserId
   const getUserId = () => {
