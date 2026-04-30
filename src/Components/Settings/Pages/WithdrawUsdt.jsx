@@ -32,7 +32,7 @@ const WithdrawUSDT = () => {
   }
 
   if (amount < 5) {
-    return toast.error("Minimum withdrawal is 5 USDC ");
+    return toast.error("Minimum withdrawal is 5");
   }
   
 

@@ -179,7 +179,9 @@ const SwapDeposit = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   className="bg-transparent outline-none text-white flex-1 min-w-0"
                 />
-                {/* <span className="text-xs text-gray-500 shrink-0">CIP</span> */}
+                <span className="text-xs text-gray-500 shrink-0">
+                  {selectedWallet === "referral" ? "USDC" : "CIP"}
+                </span>
               </div>
             </div>
 
@@ -276,11 +278,11 @@ const SwapDeposit = () => {
                           </span>
                         </td>
                         <td className="px-3 py-3 text-center text-white font-medium">
-                          {item.fromAmount} 
+                          {item.fromAmount} {item.fromWallet === "referral" ? "USDC" : "CIP"}
                         </td>
                         <td className="px-3 py-3 text-center font-semibold text-[#81ECFF]">
-  {item.toAmount?.toFixed(2)} {item.fromWallet === "referral" ? "USDC" : "CIP"}
-</td>
+                          ${item.toAmount?.toFixed(2)}
+                        </td>
                         <td className="px-3 py-3 text-center">
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             item.status === "completed"
