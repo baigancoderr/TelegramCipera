@@ -95,24 +95,24 @@ const WalletHero = () => {
 
   const walletData = [
   {
-    title: "DEPOSIT",
-    value: `${format3(overview.wallets.deposit)}`,
+    title: "DEPOSIT (Usdc)",
+    value: `$${format3(overview.wallets.deposit)}`,
     sub: "Wallet Balance",
   },
   {
-    title: "REFERRAL",
-    value: `${format3(overview.wallets.referral)}`,
+    title: "REFERRAL (Usdc)",
+    value: `$${format3(overview.wallets.referral)}`,
     sub: "Earnings",
   },
   {
-    title: "ROI",
+    title: "ROI (CIP)",
     value: `${format3(overview.wallets.roi)}`,
      sub: "Earnings",
   },
   {
     title: "TOTAL INVESTMENT",
 
-    value: `${format3(overview.investments.totalInvested)}`,
+    value: `$${format3(overview.investments.totalInvested)}`,
     sub: "All Time",
   },
 ];
@@ -264,13 +264,13 @@ const WalletHero = () => {
                     <div className="flex items-center gap-2">
                       <Coins size={14} className="text-purple-400" />
                       <span className="text-white text-sm font-semibold">
-                        {item?.amount || 0} USDT
+                        {item?.amount || 0} USDC
                       </span>
                     </div>
 
                     <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
                      {format3(item?.tokensReceived)}
-                      CPR tokens
+                      CIP tokens
                     </span>
                   </div>
                 </div>
@@ -323,11 +323,11 @@ const WalletHero = () => {
               </div>
 
               {/* Body */}
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-cyan-400 text-sm font-medium">
-                  {format3(item?.dailyIncomeTokens)}
-                  CPR / day
-                </p>
+              <div className="mt-2 flex justify-between items-center ">
+               <p className="text-cyan-400 text-sm font-medium flex items-center gap-1">
+  <span>{format3(item?.dailyIncomeTokens)}</span>
+  <span>CIP / day</span>
+</p>
 
                 <p className="text-xs text-gray-400">
                   {daysCompleted} / {item?.totalDays || 700} days

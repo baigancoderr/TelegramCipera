@@ -317,12 +317,13 @@ const stats = dashboard.stats
   .filter(
     (item) =>
       item.title !== "ACTIVE PACKAGE" &&
-      item.title !== "ROI EARNINGS"
+    item.title !== "WALLET BALANCE" &&
+    item.title !== "ROI EARNINGS"
   )
   .map((item) => ({
     ...item,
     value:
-      item.title === "LIVE PRICE (SGN)"
+      item.title === "LIVE PRICE (CIP)"
         ? `$${dashboard.tokenPrice}`
         : item.value,
   }));

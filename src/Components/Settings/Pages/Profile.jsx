@@ -360,7 +360,7 @@ if (showSkeleton) {
               type="text"
               value={inputReferral}
               onChange={(e) => setInputReferral(e.target.value.toUpperCase())}
-              placeholder="Enter CPRXXXXXX"
+              placeholder="Enter CIPXXXXXX"
               className="w-full px-3 py-2 rounded-lg bg-black border border-[#444] text-white mb-3"
             />
             <button

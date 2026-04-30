@@ -91,6 +91,24 @@ const handleConfirmWithdraw = () => {
   return res.data.data.withdrawals;
 };
 
+const fetchUserOverview = async () => {
+  const res = await api.get("/user/overview");
+  if (res.data.status === "success" || res.data.success) {
+    return res.data.data;
+  }
+  throw new Error(res.data.message || "Failed to load overview");
+};
+
+const {
+  data: overviewData,
+  isLoading: overviewLoading,
+} = useQuery({
+  queryKey: ["user-overview"],
+  queryFn: fetchUserOverview,
+  staleTime: 1000 * 60,
+  cacheTime: 1000 * 60 * 5,
+  refetchOnWindowFocus: true,
+});
 
 const {
   data: withdrawHistory = [],
@@ -106,6 +124,17 @@ const {
 });
 
 const queryClient = useQueryClient();
+
+useEffect(() => {
+  if (overviewData?.wallets) {
+    setReferralBalance(overviewData.wallets.referral || 0);
+    setRoiBalance(overviewData.wallets.roi || 0);
+  }
+
+  if (overviewData?.walletAddress) {
+    setAddress(overviewData.walletAddress);
+  }
+}, [overviewData]);
 
 // Request OTP Mutation
 const requestOtpMutation = useMutation({
@@ -171,7 +200,7 @@ const withdrawMutation = useMutation({
       setOtp("");
 
       // Refresh wallet balances from API
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-overview"] });
       
       // Also update local state
       if (data.data?.balances) {
@@ -211,7 +240,8 @@ const withdrawMutation = useMutation({
       // Mapping
 const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) => ({
   id: item.transactionHash,
-  amount: `$${item.amount}`,
+  amount: `${item.amount}`,
+  walletType: item.walletType,
   address: item.walletAddress,
   date: new Date(item.createdAt).toLocaleDateString(),
   status: item.status,
@@ -264,9 +294,9 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
             <div className="flex gap-3 items-center">
               <Wallet size={18} />
               <div>
-                <p className="text-xs text-gray-400">ROI Wallet</p>
+                <p className="text-xs text-gray-400">ROI Wallet (CIP)</p>
                 <p className="text-lg font-bold">
-                  ${Number(roiBalance ?? 0).toFixed(3)}
+                  {Number(roiBalance ?? 0).toFixed(3)}
                 </p>
               </div>
             </div>
@@ -314,7 +344,7 @@ const currentData = withdrawHistory.slice(indexOfFirst, indexOfLast).map((item) 
               <label className="text-xs text-[#81ECFF]">Amount</label>
               <input
                 type="number"
-                placeholder="Enter amount (min 5 USDC)"
+                placeholder={walletType === "roi" ? "Enter Token (Min 5 CIP)" : "Enter amount (min 5 USDC)"}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full mt-1 px-3 py-2 rounded-lg 
@@ -450,7 +480,7 @@ bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
 
                 {/* AMOUNT */}
                 <td className="px-3 py-3 text-white">
-                  {item.amount}
+                  {item.walletType === "roi" ? `${item.amount} CIP` : `$${item.amount}`}
                 </td>
 
                 {/* ADDRESS */}
@@ -465,17 +495,22 @@ bg-[linear-gradient(217deg,_rgba(88,127,255,0.4),_rgba(0,7,64,0.2))]">
 
                 {/* STATUS */}
                 <td className="px-3 py-3 text-right">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium
-                    ${item.status === "success" || item.status === "Success"
-                        ? "bg-green-500/20 text-green-300"
-                        : item.status === "pending"
-                          ? "bg-yellow-500/20 text-yellow-300"
-                          : "bg-red-500/20 text-red-300"
-                      }`}
-                  >
-                    {item.status}
-                  </span>
+                  {(() => {
+                    const normalizedStatus = String(item.status || "").toLowerCase();
+                    const isSuccess = normalizedStatus === "success" || normalizedStatus === "completed" || normalizedStatus === "complete";
+                    const isPending = normalizedStatus === "pending" || normalizedStatus === "in progress" || normalizedStatus === "processing";
+                    const statusClass = isSuccess
+                      ? "bg-green-500/20 text-green-300"
+                      : isPending
+                        ? "bg-yellow-500/20 text-yellow-300"
+                        : "bg-red-500/20 text-red-300";
+
+                    return (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClass}`}>
+                        {item.status}
+                      </span>
+                    );
+                  })()}
                 </td>
 
               </tr>
