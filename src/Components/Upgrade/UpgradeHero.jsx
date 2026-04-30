@@ -116,10 +116,10 @@ const handleInvest = async () => {
     return;
   }
 
-  if (!investAmount || investAmount < 25) {
-    toast.error("Minimum investment amount is 25 CIP");
-    return;
-  }
+  // if (!investAmount || investAmount < 25) {
+  //   toast.error("Minimum investment amount is 25 CIP");
+  //   return;
+  // }
 
   setLoading(true);
   try {
