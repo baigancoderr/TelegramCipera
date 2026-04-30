@@ -221,7 +221,7 @@ const startDate = new Date().toLocaleDateString();
 
             <div className="group rounded-2xl border-2 border-[#444385] hover:border-transparent overflow-hidden">
               <div className="bg-[#00000033] p-3 h-full backdrop-blur-[20px] transition-all duration-300 group-hover:bg-[linear-gradient(180deg,_#020204_0%,_#2C6096_100%)] group-hover:border-l-[5px] group-hover:border-l-[#587FFF]">
-                <p className="text-gray-400 text-sm">Total Locked Tokens</p>
+                <p className="text-gray-400 text-sm">Locked Tokens</p>
                <p className="text-emerald-400 text-md font-semibold mt-1">
   {overviewLoading ? "..." : Number(overview?.investments?.totalReturnTokens || 0).toFixed(3)} CIP
 </p>
@@ -267,7 +267,7 @@ const startDate = new Date().toLocaleDateString();
       />
 
       <p className="text-xs text-gray-500 mt-3 pl-2">
-        Minimum deposit: 25 USDC
+        Minimum deposit: 5 USDC
       </p>
     </div>
     <div className="grid grid-cols-4 gap-3 mb-5">
