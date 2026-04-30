@@ -179,7 +179,7 @@ const SwapDeposit = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   className="bg-transparent outline-none text-white flex-1 min-w-0"
                 />
-                <span className="text-xs text-gray-500 shrink-0">CIP</span>
+                {/* <span className="text-xs text-gray-500 shrink-0">CIP</span> */}
               </div>
             </div>
 
