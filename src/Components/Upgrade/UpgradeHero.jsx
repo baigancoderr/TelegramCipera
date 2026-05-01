@@ -116,8 +116,8 @@ const handleInvest = async () => {
     return;
   }
 
-  if (!investAmount || investAmount < 25) {
-    toast.error("Minimum investment amount is 25 CPR");
+  if (!investAmount || investAmount < 5) {
+    toast.error("Minimum investment amount is 5 CPR");
     return;
   }
 
