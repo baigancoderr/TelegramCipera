@@ -9,7 +9,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://ciperabackend.onrender.com/",
+  baseURL: "https://backend.cipera.net/",
   //  baseURL: "http://localhost:5000",
   
 });
